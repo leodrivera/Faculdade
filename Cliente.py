@@ -26,7 +26,7 @@ def teste(valor,l): # função para tratamento de erro de entrada de valores
 			valor=raw_input('Valor inválido, digite novamente\n')	#Exceção pelo valor vazio
 	return valor #retorna valor válido
 
-
+loged=0
 c=raw_input('Digite 0 para cadatrar novo usuário ou 1 para logar em usuário já existente\n')
 
 while (c != '1') and (c != '0'):
@@ -44,16 +44,31 @@ if c== '0': # Cadastro de novo usuário
 		#	print "Tá tranquilo, tá favorável"
 		#	break # Se passar no teste, ele sai
 		#print ('Nome existente.\n')
-		senha=raw_input('Digite a nova senha de no mínimo 4 dígitos\n')
-		senha=teste(senha,3) # Teste de entrada vazio
-		#soc.sendall(senha) # Envia senha para o servidor
 		telefone=raw_input('Digite o telefone do novo usuário.\nEx: xxxx-xxxx\n')
 		telefone=teste(telefone,7) # Teste de entrada vazio
 		#soc.sendall(telefone) # Envia telefone para o servidor
 		ender=raw_input('Digite o endereço do novo usuário\n')
 		ender=teste(ender,0) # Teste de entrada vazio
 		#soc.sendall(end) # Envia endereço para o servidor
-		soc.sendall('Adiciona_usuario'+","+nome+","+senha+","+ender)
+		email=raw_input('Digite o email do novo usuário\n')
+		email=teste(email,40)
+		#
+		senha = raw_input('Digite a nova senha de no mínimo 4 dígitos\n')
+		senha = teste(senha, 3)  # Teste de entrada vazio
+		# soc.sendall(senha) # Envia senha para o servidor
+		soc.sendall('Adiciona_usuario'+","+nome+","+ender+","+email+","+senha)
+		re=soc.recv(1024)
+		re=re.split(',')
+		if re(0)=="ok":
+			print('Usuário cadastrado com sucesso')
+			loged=1
+			break
+		else:
+
+			nome=raw_input('Nome de usuário já utilizado, favor digitar um novo')
+
+
+
 
 		break
 
