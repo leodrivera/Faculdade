@@ -51,7 +51,7 @@ if c== '0': # Cadastro de novo usuário
 		ender=teste(ender,0) # Teste de entrada vazio
 		#soc.sendall(end) # Envia endereço para o servidor
 		email=raw_input('Digite o email do novo usuário:\n')
-		email=teste(email,40)
+		email=teste(email,4)
 		#
 		senha = raw_input('Digite a nova senha de no mínimo 4 dígitos:\n')
 		senha = teste(senha, 3)  # Teste de entrada vazio
@@ -64,7 +64,15 @@ if c== '0': # Cadastro de novo usuário
 			loged=1
 			break
 		else:
-			print('Nome de usuário já utilizado\n')
+			if re(1)=='cl_usado': #usuário já utilizado
+				print('Nome de usuário já utilizado\n')
+			while re(1)=='err_pct': #erro de pacote, reenvio de dados
+				soc.sendall('Adiciona_usuario' + "," + nome + "," + telefone + "," + ender + "," + email + "," + senha)
+				re=soc.recv(1024)
+
+			#tratamento de erro complexo vai entrar aqui
+
+
 else:
 	while (1):
 		nome = raw_input('Digite o nome do usuário:\n')
