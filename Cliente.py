@@ -38,8 +38,8 @@ if c== '0': # Cadastro de novo usuário
 	while 1:  #Laço do cadastro
 		nome=raw_input('Digite o nome do novo usuário\n')
 		nome=teste(nome,0) # Teste de entrada vazio
-		#soc.sendall(nome) # Envia nome para o servidor
-		#check = soc.recv(1024) #Recebe resposta se o nome é repetido ou não
+		soc.sendall(nome) # Envia nome para o servidor
+		check = soc.recv(1024) #Recebe resposta se o nome é repetido ou não
 		#if check == 'ok':
 		#	print "Tá tranquilo, tá favorável"
 		#	break # Se passar no teste, ele sai
