@@ -34,7 +34,7 @@ while (c != '1') and (c != '0'):
 if c== '0': # Cadastro de novo usuário
 	soc.sendall('Adiciona_usuario')
 
-	while 1:            #Laço do nome
+	while 1:  #Laço do nome
 		nome=raw_input('Digite o nome do novo usuário\n')
 		nome=teste(nome,0) # Teste de entrada vazio
 		soc.sendall(nome) # Envia nome para o servidor
@@ -62,7 +62,7 @@ if c== '0': # Cadastro de novo usuário
 	soc.sendall(end) # Envia endereço para o servidor
 
 	print ("OI")
-
+	print 'bla bla whiskas sachê'
 
 
 	
