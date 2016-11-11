@@ -19,7 +19,11 @@ print "Esperando pelos clientes\n"
 
 
 a = conn.recv(1024) #Cliente querendo cadastrar
+print a
 
+user=a.split(",")
+print user
+""""
 print a
 
 b = conn.recv(1024) #Recebe nome do servidor
@@ -40,7 +44,7 @@ print b
 b = conn.recv(1024) #Recebe endereço do servidor
 
 print b
-
+"""
 
 """
 class usuario:
