@@ -57,7 +57,6 @@ if c== '0': # Cadastro de novo usuário
 
 		break
 
-0
 
 
 	
