@@ -60,7 +60,8 @@ if c== '0': # Cadastro de novo usuário
 	end=raw_input('Digite o endereço do novo usuário')
 	end=teste(end,0) # Teste de entrada vazio
 	soc.sendall(end) # Envia endereço para o servidor
-	
+
+	print ("OI")
 
 
 
