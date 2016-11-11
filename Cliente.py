@@ -45,7 +45,7 @@ if c== '0': # Cadastro de novo usuário
 		print ('Nome existente.\n')
 	
 	#cadastro senha
-	senha=raw_input('Digite a nova senha')
+	senha=raw_input('Digite a nova senha\n')
 	senha=teste(senha,0) # Teste de entrada vazio
 	soc.sendall(senha) # Envia senha para o servidor	
 
