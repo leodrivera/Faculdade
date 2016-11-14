@@ -91,7 +91,7 @@ def servidor(conn):
                     conn.sendall('not_ok')
                     # Perguntar se mando essa mensagem para o cliente ou se é só para mandar
                     # o not_ok
-            break  # sai do 1º while
+                break  # sai do 1º while
 
 #Tenho que criar um segundo Thread para o leilao
 
