@@ -25,13 +25,38 @@ class user:
         f = open('clientes.txt','a') # Escreve as linhas a partir da útlima linha escrita
         f.write(self.nome + ',' + self.telefone + ',' + self.endereco + ',' + self.email + ',' + self.senha+'\n')
 
+class produto:
+    nome = None
+    descricao = None
+    lance_min = None
+    dia = 0
+    mes = 0
+    ano = 0
+    hora = 0
+    minuto = 0
+    segundo = 0
+    tempo_max = 0 #Em segundos
+
+    def __init__(self, nome, telefone, endereco, email, senha):
+        self.nome = nome
+        self.telefone = telefone
+        self.endereco = endereco
+        self.email = email
+        self.senha = senha
+
+    # Registrar usuário em clientes.txt
+    def arquivar_usuario(self):
+        f = open('clientes.txt', 'a')  # Escreve as linhas a partir da útlima linha escrita
+        f.write(self.nome + ',' + self.telefone + ',' + self.endereco + ',' + self.email + ',' + self.senha + '\n')
+
 #Rotina para carregar usuários:
 def carregar_usuarios():
     try: #Caso o arquivo 'clientes.txt' não exista, ele abre uma exceção de IOError e passa
         f=open('clientes.txt') #Abre o arquivo clientes
-        for linha in f:
-            linha=linha.split(',')
+        for linha in f: #vai em todas as linhas do arquivo
+            linha=linha.split(',') #transforma a linha em uma lista
             globals()[linha[0]] = user(str(linha[0]), str(linha[1]), str(linha[2]), str(linha[3]), str(linha[4].strip()))
+            # cria o objeto a partir das informações em linha. O último elemento precisa do .strip() por causa do \n
     except IOError:
         pass
 
@@ -89,9 +114,8 @@ def servidor(conn):
                 except KeyError:
                     print ('Usuário não existe')
                     conn.sendall('not_ok')
-                    # Perguntar se mando essa mensagem para o cliente ou se é só para mandar
-                    # o not_ok
-                break  # sai do 1º while
+                    # Perguntar se mando essa mensagem para o cliente ou se é só para mandar o not_ok
+                break  # sai do 'Faz_login' loop mas continua no loop principal
 
 #Tenho que criar um segundo Thread para o leilao
 

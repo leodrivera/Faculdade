@@ -35,7 +35,7 @@ if __name__ == '__main__':  ###Programa principal
         # Mensagem para o cliente digitar o que ele deseja fazer
         # Loop fica rodando até o cliente digitar '0' ou '1'
         while 1:
-            c = raw_input('Digite 0 para cadastrar um novo usuário ou 1 para logar em um usuário já existente\n')
+            c = raw_input('Digite:\n 0 para cadastrar um novo usuário\n 1 para logar em um usuário já existente\n')
             if (c != '1') and (c != '0'):
                 print "Valor inválido\n"
             else:
@@ -73,21 +73,25 @@ if __name__ == '__main__':  ###Programa principal
         else:
             print "---------Login---------"
             while (1):
-                nome = raw_input('Digite o nome do usuário:\n')
-                senha = raw_input('Digite sua senha:\n')
-                soc.sendall("Faz_login"+","+nome+","+senha)
-                rec = soc.recv(1024)
-                if rec == 'ok':
+                nome = raw_input('Digite o nome do usuário:\n') #Armazena o nome do usuário na variável nome
+                senha = raw_input('Digite sua senha:\n') #Armazena a senha do usuário na variável senha
+                soc.sendall("Faz_login"+","+nome+","+senha) #Envia as informações para o servidor
+                rec = soc.recv(1024) #Recebe as respostas do servidor
+                if rec == 'ok': #Se a resposta for ok
                     print('Usuário logado com sucesso')
                     logged = 1 #Indica que está logado
-                    break
+                    break #Sai do 'Login' loop
                 else:
                     print('Usuário não cadatrado ou dados incorretos\n')
-        if logged == 1: #Se o usuário estiver logado, ele sai do loop
-            break
+        if logged == 1: #Se o usuário estiver logado, ele sai do loop principal
+            break #Sai do loop principal
 
 
-print "Dentro do leilão"
+print "---------Bem vindo ao sistema de leilão---------\nDiga o que deseja fazer:\n"
+print "1 para Lançar um novo produto\n"
+
+
+
 
 
 
