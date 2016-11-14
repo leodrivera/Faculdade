@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-
+from time import time, sleep
 import socket, os, threading
 
 #Classe onde ficam armazenadas as informações do usuário
@@ -25,38 +25,16 @@ class user:
         f = open('clientes.txt','a') # Escreve as linhas a partir da útlima linha escrita
         f.write(self.nome + ',' + self.telefone + ',' + self.endereco + ',' + self.email + ',' + self.senha+'\n')
 
-class produto:
-    nome = None
-    descricao = None
-    lance_min = None
-    dia = 0
-    mes = 0
-    ano = 0
-    hora = 0
-    minuto = 0
-    segundo = 0
-    tempo_max = 0 #Em segundos
 
-    def __init__(self, nome, telefone, endereco, email, senha):
-        self.nome = nome
-        self.telefone = telefone
-        self.endereco = endereco
-        self.email = email
-        self.senha = senha
 
-    # Registrar usuário em clientes.txt
-    def arquivar_usuario(self):
-        f = open('clientes.txt', 'a')  # Escreve as linhas a partir da útlima linha escrita
-        f.write(self.nome + ',' + self.telefone + ',' + self.endereco + ',' + self.email + ',' + self.senha + '\n')
 
 #Rotina para carregar usuários:
 def carregar_usuarios():
     try: #Caso o arquivo 'clientes.txt' não exista, ele abre uma exceção de IOError e passa
         f=open('clientes.txt') #Abre o arquivo clientes
-        for linha in f: #vai em todas as linhas do arquivo
-            linha=linha.split(',') #transforma a linha em uma lista
+        for linha in f:
+            linha=linha.split(',')
             globals()[linha[0]] = user(str(linha[0]), str(linha[1]), str(linha[2]), str(linha[3]), str(linha[4].strip()))
-            # cria o objeto a partir das informações em linha. O último elemento precisa do .strip() por causa do \n
     except IOError:
         pass
 
@@ -85,6 +63,9 @@ def servidor(conn):
                 #print "Chequei nome"
                 if flag == 1: #Se o nome for repetido, ele manda uma resposta ao cliente
                     conn.sendall('not_ok')
+                    sleep(1)
+                    conn.sendall('cl_usado')
+
                 else:
                     nome = user(a[1],a[2],a[3],a[4],a[5]) # crio objeto 'nome' da classe usuário
                     #print "criei objeto"
@@ -94,6 +75,7 @@ def servidor(conn):
                 break
 
         elif a[0] == 'Faz_login':
+            print 'Faz_loguin acionado'
             while 1: #Fica no loop para caso a ele erre alguma coisa, tentar novamente
             #Se o nome que ele digitou for igual ao nome e a senha
             # forem iguais as que tenho no regsitro, ele faz o login
@@ -114,8 +96,9 @@ def servidor(conn):
                 except KeyError:
                     print ('Usuário não existe')
                     conn.sendall('not_ok')
-                    # Perguntar se mando essa mensagem para o cliente ou se é só para mandar o not_ok
-                break  # sai do 'Faz_login' loop mas continua no loop principal
+                    # Perguntar se mando essa mensagem para o cliente ou se é só para mandar
+                    # o not_ok
+            break  # sai do 1º while
 
 #Tenho que criar um segundo Thread para o leilao
 
