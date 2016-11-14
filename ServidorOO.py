@@ -19,6 +19,7 @@ class user:
         self.endereco = endereco
         self.email = email
         self.senha = senha
+        self.socket = None
 
     # Registrar usuário em clientes.txt
     def arquivar_usuario(self):
@@ -31,6 +32,11 @@ class controle_usuarios:
     def adc_usuario(self,usuario):
         self.lista_usuario.append(usuario)
         usuario.arquivar_usuario() # adição do usuário ao arquivo .txt
+    def retorna_usuario(self,nome):
+        for i in self.lista_usuario:
+            if i.nome == nome:
+                s=i
+        return s
 
     def imprime(self):
         print 'Dentro do txt tem'
@@ -52,15 +58,32 @@ class controle_usuarios:
         resp=0
         for i in self.lista_usuario:
             if i.nome==usuario:
-                resp=0
+                resp=1
                 break
+        return resp
+
+        return resp
+    def checa_senha(self,nome,senha):
+        s=0
+        for i in self.lista_usuario:
+            if i.nome == nome:
+                if senha == i.senha:
+                    s=1
+                    break
+        return s
+    def add_socket(self,nome, socket):
+        for i in self.lista_usuario:
+            if i.nome == nome:
+                i.socket=conn
+
+
 
 
 
 #Servidor Thread
 def servidor(conn):
     print 'Conectado por', addr, "\n"
-    global controle
+    global controle, logado
     while 1:
         resp = conn.recv(1024)  # Cliente dizendo se quer cadastrar ou fazer login, com seus respectivos parâmetros
         if not resp: break #Sai do loop caso valor seja nulo ou 0
@@ -78,8 +101,12 @@ def servidor(conn):
 
                 else:
                     nome = user(a[1],a[2],a[3],a[4],a[5]) # crio objeto 'nome' da classe usuário
+                    nome.socket=conn
                     print "criei objeto"
                     controle.adc_usuario(nome) #adc usuário ao controle
+                    controle.add_socket(a[1], conn)
+
+                    logado = controle.retorna_usuario(a[1])
                     print "arquivei usuario"
                     conn.sendall('ok')
                 break
@@ -89,26 +116,39 @@ def servidor(conn):
             while 1: #Fica no loop para caso a ele erre alguma coisa, tentar novamente
             #Se o nome que ele digitou for igual ao nome e a senha
             # forem iguais as que tenho no regsitro, ele faz o login
-               ## print "Entrei login"
-                try:
-                    nome1 = globals()[a[1]].nome #Como fazer a comparação direto?
-                    #print "nome1", nome1
-                    #print "nome2", a[1]
-                    senha1 = globals()[a[1]].senha
-                    #print "senha1", senha1
-                    #print "senha2", a[2]
-                    if (nome1 == a[1]) and (senha1 == a[2]):
-                        globals()[a[1]].socket = addr # Armazena o ip e a porta
-                        print "O socket do cliente foi armazenado:", globals()[a[1]].socket
-                        conn.sendall('ok')
-                    else:
-                        conn.sendall('not_ok')
-                except KeyError:
-                    print ('Usuário não existe')
+            ## print "Entrei login"
+            #nome1 = globals()[a[1]].nome #Como fazer a comparação direto?
+                k=controle.checar_nome_existente(a[1])
+                print k
+                if k==0:
+                    print 'usuário inexistente'
                     conn.sendall('not_ok')
+                    #sleep(1)
+                    conn.sendall('inexis')
+                    resp = conn.recv(1024)
+                    a = resp.split(",")  # Informações do usuário separados na lista 'a'
+
+                elif controle.checa_senha(a[1],a[2])==0:
+                    print 'senha incorreta'
+                    conn.sendall('not_ok')
+                    #sleep(1)
+                    conn.sendall('err_senha')
+                    resp = conn.recv(1024)
+                    a = resp.split(",")  # Informações do usuário separados na lista 'a'
+                else:
+                    print 'loguin correto'
+
+
+                    controle.add_socket(a[1],conn)
+
+                    logado=controle.retorna_usuario(a[1])
+
+                    print "O socket do cliente foi armazenado:", #globals()[a[1]].socket
+
+                    conn.sendall('ok')
                     # Perguntar se mando essa mensagem para o cliente ou se é só para mandar
                     # o not_ok
-            break  # sai do 1º while
+                    break  # sai do 1º while
 
 #Tenho que criar um segundo Thread para o leilao
 
@@ -125,7 +165,7 @@ if __name__ == '__main__':  ###Programa principal
     print "Esperando pelos clientes\n"
     controle = controle_usuarios()  # carrega os usuarios que estavam no clientes.txt
     clientes=0
-
+    logado=None
     while 1:
         s.listen(1)
         conn, addr = s.accept()  # Aceita uma conexão
