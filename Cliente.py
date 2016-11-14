@@ -5,7 +5,7 @@
 import socket, os, time
 
 HOST = '127.0.0.1'    # The remote host
-PORT = 50008              # The same port as used by the server
+PORT = 50009              # The same port as used by the server
 soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #IPv4,tipo de socket
 soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #forçar que o socket desaloque a porta quando fechar o código
 
@@ -17,8 +17,8 @@ while 1:
 		time.sleep(1)
 
 def teste(valor,l): # função para tratamento de erro de entrada de valores
-	while 1:		
-		try:	
+	while 1:
+		try:
 			if len(valor) <= l: #Se o valor digitado for menor que o tamanho mínimo ele executa uma exceção
 				raise
 			break	#Se o valor for válido, ele quebra o loop
@@ -58,20 +58,25 @@ if c== '0': # Cadastro de novo usuário
 		# soc.sendall(senha) # Envia senha para o servidor
 		soc.sendall('Adiciona_usuario'+","+nome+","+telefone+","+ender+","+email+","+senha)
 		re=soc.recv(1024)
-		re=re.split(',')
-		if re(0)=="ok":
+		if re=="ok":
 			print('Usuário cadastrado com sucesso, usuário logado.\n')
 			loged=1
 			break
-		else:
-			if re(1)=='cl_usado': #usuário já utilizado
-				print('Nome de usuário já utilizado\n')
-			while re(1)=='err_pct': #erro de pacote, reenvio de dados
+		elif re=='not_ok':
+			re = soc.recv(1024)
+			if re =='cl_usado': #usuário já utilizado
+				print('Nome de usuário indisponível\n')
+
+"""
+			elif re == 'err_pct':  # erro de pacote, reenvio de dados:
 				soc.sendall('Adiciona_usuario' + "," + nome + "," + telefone + "," + ender + "," + email + "," + senha)
-				re=soc.recv(1024)
-
-			#tratamento de erro complexo vai entrar aqui
-
+				re = soc.recv(1024)
+				if re=="ok":
+					print('Usuário cadastrado com sucesso, usuário logado.\n')
+					loged=1
+					break
+				else
+"""
 
 else:
 	while (1):
@@ -81,13 +86,9 @@ else:
 		senha = teste(senha, 3)
 		soc.sendall("Faz_login,"+nome+','+senha)
 		rec = soc.recv(1024)
-		if rec(0) == 0:
+		if rec(0) == 'ok':
 			print('Usuário logado com sucesso')
 			loged=1
 			break
 		else:
 			print('Usuário não cadatrado\n')
-
-
-
-
