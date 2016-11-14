@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-
+from time import time, sleep
 import socket, os, threading
 
 #Classe onde ficam armazenadas as informações do usuário
@@ -24,6 +24,9 @@ class user:
     def arquivar_usuario(self):
         f = open('clientes.txt','a') # Escreve as linhas a partir da útlima linha escrita
         f.write(self.nome + ',' + self.telefone + ',' + self.endereco + ',' + self.email + ',' + self.senha+'\n')
+
+
+
 
 #Rotina para carregar usuários:
 def carregar_usuarios():
@@ -60,6 +63,9 @@ def servidor(conn):
                 #print "Chequei nome"
                 if flag == 1: #Se o nome for repetido, ele manda uma resposta ao cliente
                     conn.sendall('not_ok')
+                    sleep(1)
+                    conn.sendall('cl_usado')
+
                 else:
                     nome = user(a[1],a[2],a[3],a[4],a[5]) # crio objeto 'nome' da classe usuário
                     #print "criei objeto"
@@ -69,6 +75,7 @@ def servidor(conn):
                 break
 
         elif a[0] == 'Faz_login':
+            print 'Faz_loguin acionado'
             while 1: #Fica no loop para caso a ele erre alguma coisa, tentar novamente
             #Se o nome que ele digitou for igual ao nome e a senha
             # forem iguais as que tenho no regsitro, ele faz o login
@@ -91,7 +98,7 @@ def servidor(conn):
                     conn.sendall('not_ok')
                     # Perguntar se mando essa mensagem para o cliente ou se é só para mandar
                     # o not_ok
-                break  # sai do 1º while
+            break  # sai do 1º while
 
 #Tenho que criar um segundo Thread para o leilao
 
