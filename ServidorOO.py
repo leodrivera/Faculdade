@@ -30,13 +30,14 @@ class controle_usuarios:
 
     def adc_usuario(self,usuario):
         self.lista_usuario.append(usuario)
+        usuario.arquivar_usuario() # adição do usuário ao arquivo .txt
 
     def imprime(self):
         print 'Dentro do txt tem'
         for i in self.lista_usuario:
             print i.nome
 
-    def __init__(self):
+    def __init__(self): #metodo para carregar usuários do txt
         print 'inicia controle de usuários'
         try:  # Caso o arquivo 'clientes.txt' não exista, ele abre uma exceção de IOError e passa
             f = open('clientes.txt')  # Abre o arquivo clientes
@@ -55,26 +56,6 @@ class controle_usuarios:
                 break
 
 
-
-
-#Rotina para carregar usuários:
-def carregar_usuarios():
-    try: #Caso o arquivo 'clientes.txt' não exista, ele abre uma exceção de IOError e passa
-        f=open('clientes.txt') #Abre o arquivo clientes
-        for linha in f:
-            linha=linha.split(',')
-            globals()[linha[0]] = user(str(linha[0]), str(linha[1]), str(linha[2]), str(linha[3]), str(linha[4].strip()))
-    except IOError:
-        pass
-
-#Checar se o nome já foi cadastrado
-def checar_nome(usuario):
-    try:
-        if usuario == globals()[usuario].nome:
-            flag = 1
-    except KeyError: #Se o nome não tiver em clientes.txt
-        flag = 0
-    return flag
 
 #Servidor Thread
 def servidor(conn):
@@ -97,9 +78,9 @@ def servidor(conn):
 
                 else:
                     nome = user(a[1],a[2],a[3],a[4],a[5]) # crio objeto 'nome' da classe usuário
-                    #print "criei objeto"
-                    nome.arquivar_usuario() # arquivo usuário em clientes.txt
-                    #print "arquivei usuario"
+                    print "criei objeto"
+                    controle.adc_usuario(nome) #adc usuário ao controle
+                    print "arquivei usuario"
                     conn.sendall('ok')
                 break
 
