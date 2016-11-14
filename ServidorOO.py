@@ -61,8 +61,6 @@ class controle_usuarios:
                 resp=1
                 break
         return resp
-
-        return resp
     def checa_senha(self,nome,senha):
         s=0
         for i in self.lista_usuario:

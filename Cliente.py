@@ -77,13 +77,13 @@ else:
 		senha = teste(senha, 3)
 		soc.sendall("Faz_login,"+nome+','+senha)
 		res = soc.recv(1024)
-		if res == 'ok':
-			print('Usuário logado com sucesso')
-			loged=1
-			break
+		if res == ('ok'):
+            print 'Usuário logado com sucesso'
+            loged=1
+            break
         else:
             res=soc.recv(1024)
             if res == 'inexis':
-			    print('Usuário não cadastrado\n')
+                print('Usuário não cadastrado\n')
             elif res == 'err_senha':
                 print ('Senha incorreta\n')
