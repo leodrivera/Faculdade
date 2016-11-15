@@ -64,3 +64,27 @@ for obj in my_objects:
 
 #for obj in my_objects:
 #    print obj.number
+
+class testa_entrada:
+    valor = 0
+    l = 0
+    num = 0
+    max = 100
+
+    while 1:
+        try:
+            if (num == 'numero'): #Se for para checar se o valor inserido é um número
+                valor = float(valor) #Transforma string em float. Se o valor for inteiro ou float, ele continua. Se
+                if max == 100:
+                    break                    # for string, ele abre exceção
+            if len(valor) > max: #Se o valor digitado for maior que o tamanho máximo ele executa uma exceção
+                raise
+            else:
+                break
+            if len(valor) <= l: #Se o valor digitado for menor que o tamanho mínimo ele executa uma exceção
+                raise
+            else:
+                break	#Quebra o loop
+        except Exception, err:
+            valor=raw_input('Valor inválido, digite novamente\n')	#Exceção pelo valor abaixo do mínimo determinado
+    return valor #retorna valor válido
