@@ -13,6 +13,7 @@ class user:
     senha = None
     socket = None
 
+    # Construtor da classe
     def __init__(self, nome, telefone, endereco, email, senha):
         self.nome = nome
         self.telefone = telefone
@@ -25,6 +26,7 @@ class user:
         f = open('clientes.txt','a') # Escreve as linhas a partir da útlima linha escrita
         f.write(self.nome + ',' + self.telefone + ',' + self.endereco + ',' + self.email + ',' + self.senha+'\n')
 
+#Classe onde ficam armazenadas as informações do produto
 class produto:
     nome = None
     descricao = None
@@ -37,17 +39,25 @@ class produto:
     segundo = 0
     tempo_max = 0 #Em segundos
 
-    def __init__(self, nome, telefone, endereco, email, senha):
+    # Construtor da classe
+    def __init__(self, nome, descricao, lance_min, dia, mes, ano, hora, minuto, segundo, tempo_max ):
         self.nome = nome
-        self.telefone = telefone
-        self.endereco = endereco
-        self.email = email
-        self.senha = senha
+        self.descricao = descricao
+        self.lance_min = lance_min
+        self.dia = dia
+        self.mes = mes
+        self.ano = ano
+        self.hora = hora
+        self.minuto = minuto
+        self.segundo = segundo
+        self.tempo_max = tempo_max
 
-    # Registrar usuário em clientes.txt
-    def arquivar_usuario(self):
-        f = open('clientes.txt', 'a')  # Escreve as linhas a partir da útlima linha escrita
-        f.write(self.nome + ',' + self.telefone + ',' + self.endereco + ',' + self.email + ',' + self.senha + '\n')
+
+#    # Registrar produto em produtos.txt
+#    def arquivar_produtos(self):
+#        f1 = open('produtos.txt', 'a')  # Escreve as linhas a partir da útlima linha escrita
+#        f1.write(self.nome + ',' + self.descricao + ',' + self.lance_min + ',' + self.dia + ',' + self.mes + ',' + \
+#        self.ano + ',' + self.hora + ',' + self.minuto + ',' + self.segundo + ',' + self.tempo_max'\n')
 
 #Rotina para carregar usuários:
 def carregar_usuarios():
@@ -60,6 +70,17 @@ def carregar_usuarios():
     except IOError:
         pass
 
+# Rotina para carregar produtos:
+def carregar_produtos():
+    try:  # Caso o arquivo 'clientes.txt' não exista, ele abre uma exceção de IOError e passa
+        f1 = open('produtos.txt')  # Abre o arquivo clientes
+        for lin in f1:  # vai em todas as linhas do arquivo
+            lin = lin.split(',')  # transforma a linha em uma lista
+            globals()[lin[0]] = user(str(lin[0]), str(lin[1]), str(lin[2]), str(lin[3]), str(lin[4].strip()))
+            # cria o objeto a partir das informações em lin. O último elemento precisa do .strip() por causa do \n
+    except IOError:
+        pass
+
 #Checar se o nome já foi cadastrado
 def checar_nome(usuario):
     try:
@@ -69,7 +90,7 @@ def checar_nome(usuario):
         flag = 0
     return flag
 
-#Servidor Thread
+#Thread Servidor
 def servidor(conn):
     print 'Conectado por', addr, "\n"
     carregar_usuarios()  # carrega os usuarios que estavam no clientes.txt
@@ -117,7 +138,12 @@ def servidor(conn):
                     # Perguntar se mando essa mensagem para o cliente ou se é só para mandar o not_ok
                 break  # sai do 'Faz_login' loop mas continua no loop principal
 
-#Tenho que criar um segundo Thread para o leilao
+# Thread Leilão
+def leilao():
+    resp = conn.recv(2048)
+    print resp
+    conn.sendall('ok')
+
 
 
 if __name__ == '__main__':  ###Programa principal
@@ -138,5 +164,9 @@ if __name__ == '__main__':  ###Programa principal
         conn, addr = s.accept()  # Aceita uma conexão
         clientes += 1
         print "Número de clientes conectados", clientes
+        #Aqui foi usado Thread pois cada cliente necessita de uma execução específica do programa
         t = threading.Thread(target=servidor, args=(conn,))
         t.start()
+        #t.join()
+        t1 = threading.Thread(target=leilao, args=())
+        t1.start()
