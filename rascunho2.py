@@ -14,15 +14,14 @@ print now.second
 
 """
 #Rotina para testar se o valor é válido ##
-# Sintaxe: teste("variável de input","comprimento mínimo da variável digitada","Variável para teste de número","comprimento máximo")
+# Sintaxe: teste("variável de input","comprimento mínimo +1 da variável digitada","Variável para teste de número","comprimento máximo")
 def testa_entrada(valor,l,num=0,max=100):
     while 1:
         try:
             if (num == 'numero'): #Para checar se o valor inserido é um número, caso seja necessário
                 valor = float(valor) #Transforma string em float. Se o valor for inteiro ou float, ele continua. Se for
-                if max == 100:       #string, ele abre exceção. Caso o argumento max não tenha sido definido, ele sai do loop.
-                    break
-                elif len(str(int(valor))) > max:#Se o valor digitado for maior que o tamanho máximo, ele executa uma exceção.
+                                            #string, ele abre exceção.
+                if len(str(int(valor))) > max:#Se o valor digitado for maior que o tamanho máximo, ele executa uma exceção.
                     raise                      #Caso contrário, ele transforma valor em um inteiro e sai do loop depois.
                 else:
                     valor=int(valor)         #Eu transformo ele em um inteiro por causa das datas
@@ -35,9 +34,14 @@ def testa_entrada(valor,l,num=0,max=100):
     return valor #retorna valor válido
 
 
-ano = raw_input('Digite o ano do leilão:\nEx: xxxx:\n')  # Armazena a resposta do usuário na variável 'ano'
-ano = testa_entrada(ano, 3, 'numero')  # Rotina para testar se a entrada é um valor compatível
-print ano
+#telefone = raw_input('Digite o telefone do novo usuário.\nEx: xxxxxxxx:\n')
+# Armazena a resposta do usuário na variável 'telefone'
+#telefone = testa_entrada(telefone, 7, 'numero')  # Rotina para testar se o telefone possui mais que 7 dígitos
+#print "Telefone:", telefone
+
+nome = raw_input('Digite o nome do novo produto:\n')  # Armazena a resposta do usuário na variável 'nome'
+nome = testa_entrada(nome, 0)  # Rotina para testar se a entrada é um valor não nulo
+print nome
 """
 print lance_min
 
