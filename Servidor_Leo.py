@@ -98,6 +98,7 @@ def servidor(conn):
         resp = conn.recv(1024)  # Cliente dizendo se quer cadastrar ou fazer login, com seus respectivos parâmetros
         if not resp: break #Sai do loop caso valor seja nulo ou 0
         a = resp.split(",") #Informações do usuário separados na lista 'a'
+        #print "Recebi"
         if a[0] == 'Adiciona_usuario':
             #print "entrei no if"
             while 1: #Fica no loop para caso o nome seja repetido, ele tentar registrar novamente
@@ -106,8 +107,10 @@ def servidor(conn):
                 if flag == 1: #Se o nome for repetido, ele manda uma resposta ao cliente
                     conn.sendall('not_ok')
                 else:
-                    globals()[a[1]]= user(a[1],a[2],a[3],a[4],a[5]) # crio objeto da classe usuário
-                    globals()[a[1]].arquivar_usuario() # arquivo usuário em clientes.txt
+                    nome = user(a[1],a[2],a[3],a[4],a[5]) # crio objeto 'nome' da classe usuário
+                    #print "criei objeto"
+                    nome.arquivar_usuario() # arquivo usuário em clientes.txt
+                    #print "arquivei usuario"
                     conn.sendall('ok')
                 break
 
@@ -134,13 +137,13 @@ def servidor(conn):
                     conn.sendall('not_ok')
                     # Perguntar se mando essa mensagem para o cliente ou se é só para mandar o not_ok
                 break  # sai do 'Faz_login' loop mas continua no loop principal
-"""
+
 # Thread Leilão
 def leilao():
     resp = conn.recv(2048)
     print resp
     conn.sendall('ok')
-"""
+
 
 
 if __name__ == '__main__':  ###Programa principal
@@ -165,5 +168,5 @@ if __name__ == '__main__':  ###Programa principal
         t = threading.Thread(target=servidor, args=(conn,))
         t.start()
         #t.join()
-        #t1 = threading.Thread(target=leilao, args=())
-        #t1.start()
+        t1 = threading.Thread(target=leilao, args=())
+        t1.start()
