@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-from time import time, sleep
-import socket, os, threading
-from datetime import datetime
-
-
+import socket, os, threading, datetime, time
 
 class leilao: # Classe dos leilões
     nome=' '
@@ -198,7 +194,7 @@ def recebimento(canal):  # Função para recepção de mensagens com repetição
 
 def teste_de_data(dia,mes,ano,hora,minuto,segundo): # função pra testar se a hora e data do leilão é no futuro
 
-    agora = datetime.now()  # aquisição de hora e data do pc
+    agora = datetime.datetime.now()  # aquisição de hora e data do pc
 
     try:
         if ano < float(agora.year):
@@ -222,6 +218,7 @@ def teste_de_data(dia,mes,ano,hora,minuto,segundo): # função pra testar se a h
                             raise
                         elif minuto == agora.minute:
                             if segundo < agora.segundo:
+                                print 'segundo anterior'
                                 raise
                             else:
                                 return 1
@@ -238,8 +235,8 @@ def teste_de_data(dia,mes,ano,hora,minuto,segundo): # função pra testar se a h
 
 
     except:
-        # aviso de que algum leilão foi marcado para antes da data corrente
-        print '\nleilão marcado para antes data passada\n'
+        # Aviso de que algum leilão foi marcado para antes da data corrente
+        print '\nLeilão marcado para antes data atual\n'
         return 0
 
 
