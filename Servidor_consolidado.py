@@ -281,7 +281,7 @@ def servidor(conn,addr):
                     estado = 1 # # alteração do servidor para switch 2 ao fim do while(1) (logado)
 
         elif a[0] == 'Faz_login':
-            print 'Faz_loguin acionado'
+            print 'Faz_login acionado'
             while 1: #Fica no loop para caso a ele erre alguma coisa, tentar novamente
             #Se o nome que ele digitou for igual ao nome e a senha
             # forem iguais as que tenho no regsitro, ele faz o login
@@ -376,7 +376,7 @@ def servidor(conn,addr):
 
 if __name__ == '__main__':  ###Programa principal
 
-    HOST = ''                 # Symbolic name meaning all available interfaces
+    HOST = '127.0.0.1'                 # Symbolic name meaning all available interfaces
     PORT = 50000              # Arbitrary non-privileged port
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #IPv4,tipo de socket (TCP)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #forçar que o socket desaloque a porta quando fechar o código
