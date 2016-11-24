@@ -107,7 +107,7 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
     def __init__(self): #metodo para carregar usuários do txt
         self.onlines = []
         self.lista_usuario=[]
-        print 'inicia controle de usuários\n'
+        print 'Inicia controle de usuários\n'
         try:  # Caso o arquivo 'clientes.txt' não exista, ele abre uma exceção de IOError e passa
             f = open('clientes.txt')  # Abre o arquivo clientes
             for linha in f: # Percorre todas as linhas do txt
@@ -123,21 +123,20 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
                 for i in range(2,10):  # Transforma strings de saída do txt em floats
                     c[i]=float(c[i])
 
-                if teste_de_data(c[3], c[4], c[5], c[6], c[7], c[8]) == 1: # Verifica se a data e hora de início de leilãoões arquivados não expiraramu
+                if teste_de_data(c[3], c[4], c[5], c[6], c[7], c[8]) == 1: # Verifica se a data e hora de início de leilões arquivados não expiraramS
                     leilaao = leilao(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8], c[9], c[10])  # Transforma linhas do txt em objetos da classe user
                     self.lista_leiloes_correntes.append(leilaao)
 
                 else :
                     #aviso de que algum leilão perdeu a data de inicio com servidor off line
-                    print '\nleilão de '+str(c[0])+' teve momento de início perdido com servidor off-line\n'
+                    print '\nLeião de '+str(c[0])+' teve momento de início perdido com servidor off-line\n'
 
             self.imprime_aquisicoes()
             # Inicializa atributo de usuários onlines com lista vazia
 
-
-
         except IOError:
             pass
+
     def checar_nome_existente(self,usuario,flag,senha): # Método que verifica se usuário existe quando flag = 0 e tmb testa se a senha dele é correta quando flag != 0
         resp=0
         for i in self.lista_usuario: # percorre atributo lista
@@ -247,7 +246,6 @@ def servidor(conn,addr):
     name = ' '
     estado=0 # Indicador de que existe algúem logado
     while 1: # Responsável pelas opções do "switch1"
-
         resp = conn.recv(1024)  # Cliente dizendo se quer cadastrar ou fazer login, com seus respectivos parâmetros
         if not resp: break #Sai do loop caso valor seja nulo ou 0
         a = resp.split(",") #Informações do usuário separados na lista 'a'
@@ -259,7 +257,7 @@ def servidor(conn,addr):
                 #print "Chequei nome"
                 if flag == 1: #Se o nome for repetido, ele manda uma resposta ao cliente
                     conn.sendall('not_ok')
-
+                    print
                 else:
                     nome = user(a[1],a[2],a[3],a[4],a[5],str(addr),len(controle.lista_usuario)+1) # crio objeto 'nome' da classe usuário
                     name = a[1] # armazenamento do nome do cleinte logado para utilização na criação de leilão
@@ -274,8 +272,8 @@ def servidor(conn,addr):
                     #logado = controle.retorna_usuario(a[1])
                     print "arquivei usuario"
                     conn.sendall('ok')
-
                     estado = 1 # # alteração do servidor para switch 2 ao fim do while(1) (logado)
+                    break
 
         elif a[0] == 'Faz_login':
             print 'Faz_login acionado'
@@ -373,7 +371,7 @@ def servidor(conn,addr):
 
 if __name__ == '__main__':  ###Programa principal
 
-    HOST = '127.0.0.1'                 # Symbolic name meaning all available interfaces
+    HOST = ''                 # Symbolic name meaning all available interfaces
     PORT = 50000              # Arbitrary non-privileged port
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #IPv4,tipo de socket (TCP)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #forçar que o socket desaloque a porta quando fechar o código
