@@ -41,10 +41,11 @@ class leilao: # Classe dos leilões
     def arquivar_leilao(self):
         f = open('leiloes_nao_terminados.txt','a') # Escreve as linhas a partir da útlima linha escrita
         f.write(self.nome+','+self.descricao+','+str(self.lance_minimo)+','+str(self.dia)+','+ str(self.mes)+','+str(self.ano)+','+str(self.hora)+','+str(self.minuto)+','+str(self.segundo)+','+str(self.t_max)+','+self.dono+'\n')
-
-        g = open('todos_leiloes.txt', 'a')  # Escreve as linhas a partir da útlima linha escrita
+"""
+Sequência de comandos antiga que salvava no .txt de leilões terminados
+        g = open('leilao_finalizados.txt', 'a')  # Escreve as linhas a partir da útlima linha escrita
         g.write(self.nome+','+self.descricao+','+str(self.lance_minimo)+','+str(self.dia)+','+ str(self.mes)+','+str(self.ano)+','+str(self.hora)+','+str(self.minuto)+','+str(self.segundo)+','+str(self.t_max)+','+self.dono+'\n')
-
+"""
 
 #Classe onde ficam armazenadas as informações do usuário
 class user:
@@ -100,7 +101,7 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
         for i in self.lista_usuario:
             print i.nome+i.socket1
 
-        print '\ne dentro do txt dos leilões não terminados tem:\n'
+        print '\nDentro do txt dos leilões não terminados tem:\n'
         for i in self.lista_leiloes_correntes:
             print str(i.nome)+', peretecente a '+i.dono+' para dia: '+str(int(i.dia))+'/'+str(int(i.mes))+'/'+str(int(i.ano))+' as '+str(int(i.hora))+','+str(int(i.minuto))+'h\n'
 
@@ -114,8 +115,9 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
                 linha=linha.split(',')
                 usuario = user(str(linha[0]), str(linha[1]), str(linha[2]), str(linha[3]),str(linha[4]),str(linha[5]+','+linha[6]),str(linha[7])) # Transforma linhas do txt em objetos da classe user
                 self.lista_usuario.append(usuario)
-
-
+        except IOError:
+            pass
+        try: # Caso o arquivo 'clientes.txt' não exista, ele abre uma exceção de IOError e passa
             f = open('leiloes_nao_terminados.txt')  # Abre o arquivo leilões não terminados
             for linha in f:  # Percorre todas as linhas do txt (leilões aqrquivados)
                 c = linha.split(',')
@@ -131,11 +133,10 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
                     #aviso de que algum leilão perdeu a data de inicio com servidor off line
                     print '\nLeião de '+str(c[0])+' teve momento de início perdido com servidor off-line\n'
 
-            self.imprime_aquisicoes()
-            # Inicializa atributo de usuários onlines com lista vazia
-
         except IOError:
             pass
+        self.imprime_aquisicoes()
+        # Inicializa atributo de usuários onlines com lista vazia
 
     def checar_nome_existente(self,usuario,flag,senha): # Método que verifica se usuário existe quando flag = 0 e tmb testa se a senha dele é correta quando flag != 0
         resp=0
