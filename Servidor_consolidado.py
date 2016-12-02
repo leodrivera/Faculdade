@@ -79,6 +79,7 @@ class user:
 class controle_geral: # Classe que controla os usários do sistema de leilão
     lista_usuario = []  # Atributo que lista todos os usuários já cadastrados
     onlines = []  #atributo que guarda os índices na lista_usuario dos usuários que estão online
+    lista_leiloes_futuros=[]
     lista_leiloes_correntes=[] # atributo onde estarão os leilões iniciados para monitoramento
 
     def adc_usuario(self,usuario):  # Método para adicionar novo usuário à lista
@@ -127,7 +128,7 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
 
                 if teste_de_data(c[3], c[4], c[5], c[6], c[7], c[8]) == 1: # Verifica se a data e hora de início de leilões arquivados não expiraramS
                     leilaao = leilao(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8], c[9], c[10])  # Transforma linhas do txt em objetos da classe user
-                    self.lista_leiloes_correntes.append(leilaao)
+                    self.lista_leiloes_futuros.append(leilaao)
 
                 else :
                     #aviso de que algum leilão perdeu a data de inicio com servidor off line
@@ -304,15 +305,17 @@ def servidor(conn,addr):
                     # Perguntar se mando essa mensagem para o cliente ou se é só para mandar o not_ok
                 break  # sai do 'Faz_login' loop mas continua no loop princpal
         elif a[0] == 'Lista_leiloes':
+            print 'cliente escolheu listar leilões'
 
-
-
-            arquivo = open('leiloes_p_envio.txt',
-                           'w')  # atualizando txt com valor dos leilões ainda não terminados
+            arquivo=' '
+            #arquivo = open('leiloes_p_envio.txt',
+            #               'w')  # atualizando txt com valor dos leilões ainda não terminados
             cont = 1
-            for i in controle.lista_leiloes_correntes:
-                arquivo.write(i.nome + ',' + i.descricao + ',' + str(i.lance_minimo) + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto) + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + i.dono + '\n')
+            for i in controle.lista_leiloes_futuros:
+                arquivo=(arquivo+','+str(i.nome) + ',' + str(i.descricao) + ',' + str(i.lance_minimo) + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto) + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + str(i.dono) + '\n')
                 cont = cont + 1
+
+            conn.sendall(str(arquivo))
 
 
 

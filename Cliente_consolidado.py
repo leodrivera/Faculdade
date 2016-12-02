@@ -98,11 +98,11 @@ if __name__ == '__main__':  ###Programa principal
 			soc.sendall('Lista_leiloes')
 			resp=soc.recv(1024)
 			print 'Lista de leilões iniciados e em pré inscrição'
-
-			print 'Lista de leilões futuros'
+			print resp
+			#print 'Lista de leilões futuros'
 		while estado==1:
 			print "---------Bem vindo ao sistema de leilão---------\nDiga o que deseja fazer:\n"
-			c=raw_input('0 para listar leilões \n 1 para Lançar um novo produto\n')
+			c=raw_input('0 para listar leilões \n1 para Lançar um novo produto\n')
 			if c == '1': # Cliente escolhe lançar novo produto
 				print "---------Lançar Produto---------"
 				while 1:  #Laço do Lança_Produto
@@ -152,6 +152,9 @@ if __name__ == '__main__':  ###Programa principal
 						print "Ocorreu algum erro. Tente novamente\n"
 			elif c == '0':
 				print 'cliente escolheu listar leilões'
+				soc.sendall('Lista_leiloes')
+				resp=soc.recv(1024)
+				print resp
 
 
 
