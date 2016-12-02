@@ -4,6 +4,7 @@
 import socket, os, threading, datetime, time
 
 class leilao: # Classe dos leilões
+    identificador=0
     nome=' '
     descricao=' '
     lance_minimo=0
@@ -103,7 +104,7 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
             print i.nome+i.socket1
 
         print '\nDentro do txt dos leilões não terminados tem:\n'
-        for i in self.lista_leiloes_correntes:
+        for i in self.lista_leiloes_futuros:
             print str(i.nome)+', peretecente a '+i.dono+' para dia: '+str(int(i.dia))+'/'+str(int(i.mes))+'/'+str(int(i.ano))+' as '+str(int(i.hora))+','+str(int(i.minuto))+'h\n'
 
     def __init__(self): #metodo para carregar usuários do txt
@@ -122,18 +123,20 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
             f = open('leiloes_nao_terminados.txt')  # Abre o arquivo leilões não terminados
             for linha in f:  # Percorre todas as linhas do txt (leilões aqrquivados)
                 c = linha.split(',')
-
-                for i in range(2,10):  # Transforma strings de saída do txt em floats
+                print '1'
+                for i in range(3,10):  # Transforma strings de saída do txt em floats
                     c[i]=float(c[i])
+                print '2'
 
-                if teste_de_data(c[3], c[4], c[5], c[6], c[7], c[8]) == 1: # Verifica se a data e hora de início de leilões arquivados não expiraramS
-                    leilaao = leilao(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8], c[9], c[10])  # Transforma linhas do txt em objetos da classe user
+                if teste_de_data(c[4], c[5], c[6], c[7], c[8], c[9]) == 1: # Verifica se a data e hora de início de leilões arquivados não expiraramS
+                    leilaao = leilao(c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8], c[9], c[10], c[11])  # Transforma linhas do txt em objetos da classe user
+                    leilaao.identificador=c[0] #Salvando identificador do leilão
                     self.lista_leiloes_futuros.append(leilaao)
 
                 else :
                     #aviso de que algum leilão perdeu a data de inicio com servidor off line
                     print '\nLeião de '+str(c[0])+' teve momento de início perdido com servidor off-line\n'
-
+                print '3'
         except IOError:
             pass
         self.imprime_aquisicoes()
@@ -307,12 +310,12 @@ def servidor(conn,addr):
         elif a[0] == 'Lista_leiloes':
             print 'cliente escolheu listar leilões'
 
-            arquivo=' '
+            arquivo='Listagem\n'
             #arquivo = open('leiloes_p_envio.txt',
             #               'w')  # atualizando txt com valor dos leilões ainda não terminados
             cont = 1
             for i in controle.lista_leiloes_futuros:
-                arquivo=(arquivo+','+str(i.nome) + ',' + str(i.descricao) + ',' + str(i.lance_minimo) + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto) + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + str(i.dono) + '\n')
+                arquivo=(arquivo+'Leilão de '+str(i.nome) + ',' + str(i.descricao) + ',' + str(i.lance_minimo) + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto) + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + str(i.dono) + '\n')
                 cont = cont + 1
 
             conn.sendall(str(arquivo))
@@ -340,7 +343,28 @@ def servidor(conn,addr):
                 print 'trecho de lançamento de produto'
                 #atrib = [0] * (len(b))  #  lista vazia para armazenamento de
 
-
+                ##
+                arquivo = open('numero_de_leiloes_cadastrados', 'w')
+                for lin in arquivo:
+                    num_leiloes=lin
+                arquivo.close()  #
+                ##
+                num_leiloes=num_leiloes+1
+                arquivo = open('leiloes_nao_terminados.txt',
+                               'w')  # atualizando txt com valor dos leilões ainda não terminados
+                cont = 1
+                for i in controle.lista_leiloes_correntes:
+                    if teste_de_data(i.dia, i.mes, i.ano, i.h, i.minuto, i.segundo) == 1:
+                        arquivo.write(str(num_leiloes)+','+i.nome + ',' + i.descricao + ',' + str(i.lance_minimo) + ',' + str(i.dia) + ',' + str(
+                                i.mes) + ',' + str(i.ano) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(
+                                i.minuto) + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + i.dono + +',' + str(
+                                cont) + '\n')
+                        cont = cont + 1
+                        # aqui vai comando pra matar thread
+                arquivo = open('numero_de_leiloes_cadastrados',
+                               'w')  # apagando conteúdo do txt dos leiloes não terminados
+                arquivo.write(str(num_leiloes))
+                arquivo.close()  #
 
                 for i in range(3,10):  # Transforma strings de saída da mensagem em floats
                     b[i] = float(b[i])
