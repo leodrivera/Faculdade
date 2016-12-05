@@ -383,7 +383,7 @@ def servidor(conn,addr):
                     conn.sendall('not_ok')
 
 
-            elif a[0] == 'Lista_leiloes':
+            elif b[0] == 'Lista_leiloes':
 
                 print 'cliente escolheu listar leilões'
 
