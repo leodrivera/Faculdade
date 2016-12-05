@@ -48,7 +48,7 @@ if __name__ == '__main__':  ###Programa principal
 	while 1: # Switch1
 	# Loop fica rodando até o cliente digitar escolher uma opção do swtich1
 	# Mensagem para o cliente digitar o que ele deseja fazer
-		c = raw_input('Digite:\n 0 para cadastrar um novo usuário,\n 1 para logar em um usuário já existente\n 2 para listar leilões\n')
+		c = raw_input('Digite:\n 0 para cadastrar um novo usuário,\n 1 para logar em um usuário já existente\n 2 para listar leilões\n\n')
 		if (c != '0') and (c != '1') and (c!='2'):
 			print "Valor inválido\n"
 		elif c == '0': # Cliente escolhe cadastrar novo usuário
@@ -130,10 +130,10 @@ if __name__ == '__main__':  ###Programa principal
 					hora = raw_input('Digite a hora do leilão:\nEx: xx:\n')  # Armazena a resposta do usuário na variável 'hora'
 					hora = testa_entrada(hora, 0, 'numero',2)  # Rotina para testar se a entrada é um valor compatível
 
-					minuto = raw_input('Digite os minuto do leilão:\nEx: xx:\n')  # Armazena a resposta do usuário na variável 'minuto'
+					minuto = raw_input('Digite os minutos do leilão:\nEx: xx:\n')  # Armazena a resposta do usuário na variável 'minuto'
 					minuto = testa_entrada(minuto, 0, 'numero',2)  # Rotina para testar se a entrada é um valor compatível
 
-					segundo = raw_input('Digite os segundo do leilão:\nEx: xx:\n')  # Armazena a resposta do usuário na variável 'segundo'
+					segundo = raw_input('Digite os segundos do leilão:\nEx: xx:\n')  # Armazena a resposta do usuário na variável 'segundo'
 					segundo = testa_entrada(segundo, 0, 'numero',2)  # Rotina para testar se a entrada é um valor compatível
 
 					tempo_max = raw_input('Digite tempo máximo sem lances, em segundos, do leilão:\n')
@@ -151,10 +151,11 @@ if __name__ == '__main__':  ###Programa principal
 					else:
 						print "Ocorreu algum erro. Tente novamente\n"
 			elif c == '0':
-				print 'cliente escolheu listar leilões'
 				soc.sendall('Lista_leiloes')
-				resp=soc.recv(1024)
+				resp = soc.recv(1024)
+				print 'Lista de leilões iniciados e em pré inscrição'
 				print resp
+					# print 'Lista de leilões futuros'
 
 
 
