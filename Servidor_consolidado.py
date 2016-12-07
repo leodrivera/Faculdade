@@ -390,14 +390,16 @@ def servidor(conn,addr):
                 listar_leiloes()
 
 
-            else:
-                print 'aqui vão entrar as outras opções do switch2'
-
-                estado = 0; #comando provisório para não ter loop infinito
-
-
+            elif b[0] == 'Apaga_usuario':
+                print 'cliente resolveu apagar usuario'
+                estado=0
+                conn.sendall('ok')
 
 
+            elif b[0] == 'Sair':
+                estado=0
+                print 'cliente resolveu sair'
+                conn.sendall('ok')
 
 
 #Tenho que criar um segundo Thread para o leilao
