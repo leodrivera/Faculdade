@@ -102,7 +102,7 @@ if __name__ == '__main__':  ###Programa principal
 			#print 'Lista de leilões futuros'
 		while estado==1:
 			print "---------Bem vindo ao sistema de leilão---------\nDiga o que deseja fazer:\n"
-			c=raw_input('0 para listar leilões \n1 para Lançar um novo produto\n')
+			c=raw_input('0 para listar leilões \n1 para Lançar um novo produto\n2 para apagar usuário\n3 para sair\n\n')
 			if c == '1': # Cliente escolhe lançar novo produto
 				print "---------Lançar Produto---------"
 				while 1:  #Laço do Lança_Produto
@@ -156,6 +156,23 @@ if __name__ == '__main__':  ###Programa principal
 				print 'Lista de leilões iniciados e em pré inscrição'
 				print resp
 					# print 'Lista de leilões futuros'
+			elif c=='2':
+				soc.sendall('Apaga_usuario')
+				resp=soc.recv(1024)
+				if resp == 'ok':
+					print '\nUsuário apagado com sucesso\n'
+					estado = 0
+				else:
+					print '\nErro ao apagar usuário, tente nivamente mais tarde\n'
+			elif c=='3':
+				soc.sendall('Sair')
+				resp = soc.recv(1024)
+				if resp == 'ok':
+					print '\nUsuário deslogado com sucesso\n'
+					estado = 0
+				else:
+					print '\nErro ao deslogar usuário, tente nivamente mais tarde\n'
+
 
 
 
