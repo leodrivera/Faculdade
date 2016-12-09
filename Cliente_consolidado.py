@@ -157,7 +157,9 @@ if __name__ == '__main__':  ###Programa principal
 				print resp
 					# print 'Lista de leilões futuros'
 			elif c=='2':
-				soc.sendall('Apaga_usuario')
+				#sen=raw_input("\nDigite sua senha\n")
+				#soc.sendall('Apaga_usuario,'+sen)
+				soc.sendall('Apaga_usuario,')
 				resp=soc.recv(1024)
 				if resp == 'ok':
 					print '\nUsuário apagado com sucesso\n'
@@ -172,7 +174,6 @@ if __name__ == '__main__':  ###Programa principal
 					estado = 0
 				else:
 					print '\nErro ao deslogar usuário, tente nivamente mais tarde\n'
-
 
 
 

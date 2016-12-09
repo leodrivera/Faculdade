@@ -42,10 +42,12 @@ class leilao: # Classe dos leilões
     def arquivar_leilao(self):
         f = open('leiloes_nao_terminados.txt','a') # Escreve as linhas a partir da útlima linha escrita
         f.write(str(self.identificador)+','+self.nome+','+self.descricao+','+str(self.lance_minimo)+','+str(self.dia)+','+ str(self.mes)+','+str(self.ano)+','+str(self.hora)+','+str(self.minuto)+','+str(self.segundo)+','+str(self.t_max)+','+self.dono+'\n')
+        f.close()
 """
 Sequência de comandos antiga que salvava no .txt de leilões terminados
         g = open('leilao_finalizados.txt', 'a')  # Escreve as linhas a partir da útlima linha escrita
         g.write(self.nome+','+self.descricao+','+str(self.lance_minimo)+','+str(self.dia)+','+ str(self.mes)+','+str(self.ano)+','+str(self.hora)+','+str(self.minuto)+','+str(self.segundo)+','+str(self.t_max)+','+self.dono+'\n')
+        g.close
 """
 
 #Classe onde ficam armazenadas as informações do usuário
@@ -76,7 +78,7 @@ class user:
     def arquivar_usuario(self):
         f = open('clientes.txt','a') # Escreve as linhas a partir da útlima linha escrita
         f.write(self.nome + ',' + self.telefone + ',' + self.endereco + ',' + self.email + ',' + self.senha+','+self.socket1+','+str(self.indice)+'\n')
-
+        f.close()
 class controle_geral: # Classe que controla os usários do sistema de leilão
     lista_usuario = []  # Atributo que lista todos os usuários já cadastrados
     onlines = []  #atributo que guarda os índices na lista_usuario dos usuários que estão online
@@ -117,16 +119,16 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
                 linha=linha.split(',')
                 usuario = user(str(linha[0]), str(linha[1]), str(linha[2]), str(linha[3]),str(linha[4]),str(linha[5]+','+linha[6]),str(linha[7])) # Transforma linhas do txt em objetos da classe user
                 self.lista_usuario.append(usuario)
+            f.close()
         except IOError:
             pass
         try: # Caso o arquivo 'clientes.txt' não exista, ele abre uma exceção de IOError e passa
             f = open('leiloes_nao_terminados.txt')  # Abre o arquivo leilões não terminados
             for linha in f:  # Percorre todas as linhas do txt (leilões aqrquivados)
                 c = linha.split(',')
-                print '1'
+
                 for i in range(3,10):  # Transforma strings de saída do txt em floats
                     c[i]=int(float(c[i]))
-                print '2'
 
                 if teste_de_data(c[4], c[5], c[6], c[7], c[8], c[9]) == 1: # Verifica se a data e hora de início de leilões arquivados não expiraramS
                     leilaao = leilao(c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8], c[9], c[10], c[11])  # Transforma linhas do txt em objetos da classe user
@@ -136,7 +138,7 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
                 else :
                     #aviso de que algum leilão perdeu a data de inicio com servidor off line
                     print '\nLeião de '+str(c[0])+' teve momento de início perdido com servidor off-line\n'
-                print '3'
+
         except IOError:
             pass
         self.imprime_aquisicoes()
@@ -367,7 +369,7 @@ def servidor(conn,addr):
 
 
                     arquivo = open('numero_de_leiloes_cadastrados',
-                                   'w')  # apagando conteúdo do txt dos leiloes não terminados
+                                   'w')  # trocando
                     arquivo.write(str(num_leiloes))
                     arquivo.close()  #
 
@@ -391,7 +393,28 @@ def servidor(conn,addr):
 
 
             elif b[0] == 'Apaga_usuario':
+
+
                 print 'cliente resolveu apagar usuario'
+
+                arq = open('clientes.txt','w')  # apagando txt de usuários
+                arq.close()  #
+
+
+                temp=open('clientes.txt','a')
+
+                for ind in controle.lista_usuario:
+                    if ind.indice!=logado:
+                        print ind.nome+' rearquivado'
+                        temp.write(ind.nome + ',' + ind.telefone + ',' + ind.endereco + ',' + ind.email + ',' + ind.senha+','+ind.socket1+','+str(ind.indice))
+                    else:
+                        flag= ind
+                        print ind.nome+' removido'
+                controle.lista_usuario.remove(flag)
+
+                temp.close()
+
+
                 estado=0
                 conn.sendall('ok')
 
