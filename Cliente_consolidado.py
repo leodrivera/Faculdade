@@ -74,7 +74,6 @@ if __name__ == '__main__':  ###Programa principal
 				# Envia parâmetros para o servidor
 				#print "cheguei"
 				re = soc.recv(1024)  # Recebe resposta do servidor
-				print re
 				if re == 'ok':
 					print('Usuário cadastrado com sucesso.\n')
 					estado=1 # Alteração para switch2 (logado)
@@ -173,7 +172,7 @@ if __name__ == '__main__':  ###Programa principal
 					print '\nUsuário deslogado com sucesso\n'
 					estado = 0
 				else:
-					print '\nErro ao deslogar usuário, tente nivamente mais tarde\n'
+					print '\nErro ao deslogar usuário, tente novamente mais tarde\n'
 
 
 

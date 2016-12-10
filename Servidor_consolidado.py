@@ -79,6 +79,7 @@ class user:
         f = open('clientes.txt','a') # Escreve as linhas a partir da útlima linha escrita
         f.write(self.nome + ',' + self.telefone + ',' + self.endereco + ',' + self.email + ',' + self.senha+','+self.socket1+','+str(self.indice)+'\n')
         f.close()
+
 class controle_geral: # Classe que controla os usários do sistema de leilão
     lista_usuario = []  # Atributo que lista todos os usuários já cadastrados
     onlines = []  #atributo que guarda os índices na lista_usuario dos usuários que estão online
@@ -117,14 +118,14 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
             f = open('clientes.txt')  # Abre o arquivo clientes
             for linha in f: # Percorre todas as linhas do txt
                 linha=linha.split(',')
-                usuario = user(str(linha[0]), str(linha[1]), str(linha[2]), str(linha[3]),str(linha[4]),str(linha[5]+','+linha[6]),str(linha[7])) # Transforma linhas do txt em objetos da classe user
-                self.lista_usuario.append(usuario)
+                linha[0] = user(str(linha[0]), str(linha[1]), str(linha[2]), str(linha[3]),str(linha[4]),str(linha[5]+','+linha[6]),str(linha[7])) # Transforma linhas do txt em objetos da classe user
+                self.lista_usuario.append(linha[0])
             f.close()
         except IOError:
             pass
         try: # Caso o arquivo 'clientes.txt' não exista, ele abre uma exceção de IOError e passa
             f = open('leiloes_nao_terminados.txt')  # Abre o arquivo leilões não terminados
-            for linha in f:  # Percorre todas as linhas do txt (leilões aqrquivados)
+            for linha in f:  # Percorre todas as linhas do txt (leilões arquivados)
                 c = linha.split(',')
 
                 for i in range(3,10):  # Transforma strings de saída do txt em floats
@@ -204,27 +205,27 @@ def teste_de_data(dia,mes,ano,hora,minuto,segundo): # função pra testar se a h
 
     try:
         if ano < float(agora.year):
-            print 'ano anterior'
+            print 'Ano anterior'
             raise
         elif ano == agora.year:
             if mes < agora.month:
-                print 'mês anterior'
+                print 'Mês anterior'
                 raise
             elif mes == agora.month:
                 if dia < agora.day:
-                    print 'dia anterior'
+                    print 'Dia anterior'
                     raise
                 elif dia == agora.day:
                     if hora < agora.hour:
-                        print 'hora anterior'
+                        print 'Hora anterior'
                         raise
                     elif hora == agora.hora:
                         if minuto < agora.minute:
-                            print 'minuto anterior'
+                            print 'Minuto anterior'
                             raise
                         elif minuto == agora.minute:
                             if segundo < agora.segundo:
-                                print 'segundo anterior'
+                                print 'Segundo anterior'
                                 raise
                             else:
                                 return 1
@@ -260,12 +261,28 @@ def listar_leiloes():
 
     conn.sendall(str(arquivo))
 
+def cria_arquivos_leilao():
+    try:
+        f = open('leiloes_nao_terminados.txt')  # Abre o arquivo leiloes_nao_terminados.txt. Se não tiver, ele acusa erro e cria um
+        f.close()
+
+    except IOError:
+        f = open('leiloes_nao_terminados.txt','w')
+
+    try:
+        f = open('numero_de_leiloes_cadastrados.txt')  # Abre o arquivo numero_de_leiloes_cadastrados.txt. Se não tiver, ele acusa erro e cria um
+        f.close()
+
+    except IOError:
+        f = open('numero_de_leiloes_cadastrados.txt','w')
+
 #Servidor Thread
 def servidor(conn,addr):
     print 'Conectado por', addr, "\n"
     global controle
     name = ' '
     estado=0 # Indicador de que existe algúem logado
+    cria_arquivos_leilao()
     while 1: # Responsável pelas opções do "switch1"
         resp = conn.recv(1024)  # Cliente dizendo se quer cadastrar ou fazer login, com seus respectivos parâmetros
         if not resp: break #Sai do loop caso valor seja nulo ou 0
@@ -281,11 +298,11 @@ def servidor(conn,addr):
                     print
                 else:
                     nome = user(a[1],a[2],a[3],a[4],a[5],str(addr),len(controle.lista_usuario)+1) # crio objeto 'nome' da classe usuário
-                    name = a[1] # armazenamento do nome do cleinte logado para utilização na criação de leilão
+                    name = a[1] # armazenamento do nome do cliente logado para utilização na criação de leilão
                     #logado.socket=conn
                     print "criei objeto da classe usuário"
 
-                    logado=controle.adc_usuario(nome) #adc usuário ao controle
+                    logado=controle.adc_usuario(nome) #adc usuário ao .txt
                     controle.onlines.append(logado)
 
                     #controle.add_socket(a[1], conn)
@@ -297,7 +314,6 @@ def servidor(conn,addr):
                     break
 
         elif a[0] == 'Faz_login':
-            print 'Faz_login acionado'
             while 1: #Fica no loop para caso a ele erre alguma coisa, tentar novamente
             #Se o nome que ele digitou for igual ao nome e a senha
             # forem iguais as que tenho no regsitro, ele faz o login
@@ -308,7 +324,7 @@ def servidor(conn,addr):
                     if (k1 == 1):
 
                         logado = controle.retorna_usuario(a[1],addr)
-                        print 'usuário '+str(logado.nome)+' de índice '+str(logado.indice)+' logado com ip e porta'+str(logado.socket1)
+                        print 'Usuário '+str(logado.nome)+' de índice '+str(logado.indice)+' logado com ip e porta '+str(logado.socket1)+'\n'
                         name = logado.nome # armazenamento do nome do cleinte logado para utilização na criação de leilão
                         logado=logado.indice
                         controle.onlines.append(logado) #acréscimo do cliente a variável de controle dos usuários logados
@@ -341,6 +357,7 @@ def servidor(conn,addr):
                     arquivo.write(i.nome + ',' + i.descricao + ',' + str(i.lance_minimo) + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto) + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + i.dono + +','+str(cont)+'\n')
                     cont=cont+1
                     # aqui vai comando pra matar thread
+
         while estado == 1: # Switch 2
             print 'switch2\n'
             resp=conn.recv(1024)
@@ -357,19 +374,16 @@ def servidor(conn,addr):
 
                 if teste_de_data(b[4], b[5], b[6], b[7], b[8], b[9]) == 1:
 
-                    ##
-                    arquivo = open('numero_de_leiloes_cadastrados', 'r')
+                    arquivo = open('numero_de_leiloes_cadastrados.txt', 'r')
+                    num_leiloes=Null
                     for lin in arquivo:
                         num_leiloes=lin
-                        print 'numero de leilões cadastrados aobsorvido '+str(num_leiloes)+'\n'
-                    arquivo.close()  #
-
-
+                        print 'numero de leilões cadastrados absorvidos '+str(num_leiloes)+'\n'
+                    arquivo.close()
                     num_leiloes=int(num_leiloes)+1
 
 
-                    arquivo = open('numero_de_leiloes_cadastrados',
-                                   'w')  # trocando
+                    arquivo = open('numero_de_leiloes_cadastrados.txt','w')  # trocando
                     arquivo.write(str(num_leiloes))
                     arquivo.close()  #
 
