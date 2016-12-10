@@ -102,18 +102,18 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
         return s  #retorna usuŕio quando encontrado ou vazio quando não encontrado
 
     def imprime_aquisicoes(self): # Método para printar usuários carregados do txt na inicialização
-        print 'Dentro do txt dos usuários tem:\n'
+        print 'Dentro do .txt dos usuários tem:'
         for i in self.lista_usuario:
             print i.nome+i.socket1
 
-        print '\nDentro do txt dos leilões não terminados tem:\n'
+        print '\nDentro do .txt dos leilões não terminados tem:'
         for i in self.lista_leiloes_futuros:
-            print str(i.nome)+', peretecente a '+i.dono+' para dia: '+str(int(i.dia))+'/'+str(int(i.mes))+'/'+str(int(i.ano))+' as '+str(int(i.hora))+','+str(int(i.minuto))+'h\n'
+            print str(i.nome)+', pertecente a '+i.dono+' para dia: '+str(int(i.dia))+'/'+str(int(i.mes))+'/'+str(int(i.ano))+' as '+str(int(i.hora))+':'+str(int(i.minuto))+'h'
 
     def __init__(self): #metodo para carregar usuários do txt
         self.onlines = []
         self.lista_usuario=[]
-        print 'Inicia controle de usuários\n'
+        print 'Iniciando controle de usuários...\n'
         try:  # Caso o arquivo 'clientes.txt' não exista, ele abre uma exceção de IOError e passa
             f = open('clientes.txt')  # Abre o arquivo clientes
             for linha in f: # Percorre todas as linhas do txt
@@ -131,8 +131,10 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
                 for i in range(3,10):  # Transforma strings de saída do txt em floats
                     c[i]=int(float(c[i]))
 
-                if teste_de_data(c[4], c[5], c[6], c[7], c[8], c[9]) == 1: # Verifica se a data e hora de início de leilões arquivados não expiraramS
-                    leilaao = leilao(c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8], c[9], c[10], c[11])  # Transforma linhas do txt em objetos da classe user
+                if teste_de_data(c[4], c[5], c[6], c[7], c[8], c[9]) == 1: # Verifica se a data e hora de início de leilões arquivados não expiraram
+                    leilaao = leilao(str(c[1]), str(c[2]), str(c[3]), str(c[4]), str(c[5]), str(c[6]), \
+                     str(c[7]), str(c[8]), str(c[9]), str(c[10]), str(c[11].strip()))
+                    # Transforma linhas do txt em objetos da classe user. O último elemento precisa do .strip() por causa do \n
                     leilaao.identificador=c[0] #Salvando identificador do leilão
                     self.lista_leiloes_futuros.append(leilaao)
 
@@ -247,19 +249,20 @@ def teste_de_data(dia,mes,ano,hora,minuto,segundo): # função pra testar se a h
         return 0
 
 def listar_leiloes():
-    arquivo = 'Listagem\n\n'
-    # arquivo = open('leiloes_p_envio.txt',
-    #               'w')  # atualizando txt com valor dos leilões ainda não terminados
-    cont = 1
+    #arquivo = 'Listagem\n\n'
+    arquivo = open('leiloes_nao_terminados.txt','r')  # atualizando txt com valor dos leilões ainda não terminados
+    lista=""
+    print arquivo
+    print "\n"
     for i in controle.lista_leiloes_futuros:
-        arquivo = (arquivo + 'Leilão de ' + str(i.nome) + ',' + str(i.descricao) + ', de lance mínimo de R$ ' + str(
-            i.lance_minimo) + '\nMarcado para dia ' + str(i.dia) + '/' + str(i.mes) + '/' + str(i.ano) + ' as ' + str(
-            i.hora) + ' horas, ' + str(i.minuto) + ' minutos e ' + str(
-            i.segundo) + ' segundos\ncom tempo máximo de ' + str(
-            i.t_max) + 'se gundos entre lances e pertencente a ' + str(i.dono) + '\n')
-        cont = cont + 1
+        lista = ( lista + '\nNome do produto: ' + str(i.nome) + '\nDescrição do produto: ' + str(i.descricao) +\
+            '\nLance mínimo: R$' + str(i.lance_minimo) + '\nDia e hora do leilão: ' + str(i.dia) + '/' +\
+            str(i.mes) + '/' + str(i.ano) + ' as ' + str(i.hora) + ':' + str(i.minuto) + ':' + str(\
+            i.segundo) +'\nO tempo máximo entre lances é de: ' + str(i.t_max) + ' segundos'+\
+            '\nO leilao pertence a: ' + str(i.dono) + '\n')
 
-    conn.sendall(str(arquivo))
+    conn.sendall(str(lista))
+
 
 def cria_arquivos_leilao():
     try:
@@ -308,7 +311,7 @@ def servidor(conn,addr):
                     #controle.add_socket(a[1], conn)
 
                     #logado = controle.retorna_usuario(a[1])
-                    print "arquivei usuario"
+                    print "Arquivei usuario"
                     conn.sendall('ok')
                     estado = 1 # # alteração do servidor para switch 2 ao fim do while(1) (logado)
                     break
@@ -324,7 +327,7 @@ def servidor(conn,addr):
                     if (k1 == 1):
 
                         logado = controle.retorna_usuario(a[1],addr)
-                        print 'Usuário '+str(logado.nome)+' de índice '+str(logado.indice)+' logado com ip e porta '+str(logado.socket1)+'\n'
+                        print 'Usuário '+str(logado.nome)+' de índice '+str(logado.indice.strip())+' logado com ip e porta '+str(logado.socket1)+'\n'
                         name = logado.nome # armazenamento do nome do cleinte logado para utilização na criação de leilão
                         logado=logado.indice
                         controle.onlines.append(logado) #acréscimo do cliente a variável de controle dos usuários logados
@@ -339,7 +342,7 @@ def servidor(conn,addr):
                     # Perguntar se mando essa mensagem para o cliente ou se é só para mandar o not_ok
                 break  # sai do 'Faz_login' loop mas continua no loop princpal
         elif a[0] == 'Lista_leiloes':
-            print 'cliente escolheu listar leilões'
+            print 'Listando leilões para anônimo\n'
             listar_leiloes()
 
 
@@ -375,7 +378,7 @@ def servidor(conn,addr):
                 if teste_de_data(b[4], b[5], b[6], b[7], b[8], b[9]) == 1:
 
                     arquivo = open('numero_de_leiloes_cadastrados.txt', 'r')
-                    num_leiloes=Null
+                    num_leiloes = 0
                     for lin in arquivo:
                         num_leiloes=lin
                         print 'numero de leilões cadastrados absorvidos '+str(num_leiloes)+'\n'
@@ -389,20 +392,19 @@ def servidor(conn,addr):
 
                     leilaao = leilao( b[1], b[2], b[3], b[4],b[5],b[6],b[7],b[8],b[9],b[10],name)
                     leilaao.identificador=num_leiloes
+                    controle.leiloes_nao_terminados.append(leilaao)
                     controle.lista_leiloes_correntes.append(leilaao)
                     leilaao.arquivar_leilao()
                     conn.sendall('ok')
-                    print 'leilão criado com sucesso\n'
+                    print 'Leilão criado com sucesso\n'
                 else:
                     # aviso de que algum leilão perdeu a data de inicio com servidor off line
-                    print '\nleilão de ' + str(b[1]) + ' marcado para antes de agora\n'
+                    print '\nLeilão de ' + str(b[1]) + ' marcado para antes de agora.\n'
                     conn.sendall('not_ok')
 
 
             elif b[0] == 'Lista_leiloes':
-
-                print 'cliente escolheu listar leilões'
-
+                print 'Listando leilões para usuário\n'
                 listar_leiloes()
 
 
@@ -450,7 +452,7 @@ if __name__ == '__main__':  ###Programa principal
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #forçar que o socket desaloque a porta quando fechar o código
     s.bind((HOST, PORT)) #liga o socket com IP e porta
 
-    print "Servidor funcionado"
+    print "---------Servidor funcionado---------"
     print "Esperando pelos clientes\n"
     controle = controle_geral()  # carrega os usuarios que estavam no clientes.txt
     clientes=0
@@ -459,6 +461,6 @@ if __name__ == '__main__':  ###Programa principal
         s.listen(1)
         conn, addr = s.accept()  # Aceita uma conexão
         clientes += 1
-        print "Número de clientes conectados", clientes
+        print "\nNúmero de clientes conectados", clientes
         t = threading.Thread(target=servidor, args=(conn,addr))
         t.start()

@@ -43,7 +43,7 @@ if __name__ == '__main__':  ###Programa principal
 		except:
 			time.sleep(1)
 
-	print "Você está conectado ao servidor\n"
+	print "---------Você está conectado ao servidor---------\n"
 	estado=0
 	while 1: # Switch1
 	# Loop fica rodando até o cliente digitar escolher uma opção do swtich1
@@ -88,7 +88,7 @@ if __name__ == '__main__':  ###Programa principal
 				soc.sendall("Faz_login"+","+nome+","+senha) #Envia as informações para o servidor
 				rec = soc.recv(1024) #Recebe as respostas do servidor
 				if rec == 'ok': #Se a resposta for ok
-					print('Usuário logado com sucesso')
+					print('\nUsuário logado com sucesso\n')
 					estado = 1  # Alteração para switch2 (logado)
 					break
 				else:
@@ -96,11 +96,11 @@ if __name__ == '__main__':  ###Programa principal
 		elif c=='2':
 			soc.sendall('Lista_leiloes')
 			resp=soc.recv(1024)
-			print 'Lista de leilões iniciados e em pré inscrição'
+			print ("Lista de leilões iniciados e em pré inscrição:")
 			print resp
 			#print 'Lista de leilões futuros'
 		while estado==1:
-			print "---------Bem vindo ao sistema de leilão---------\nDiga o que deseja fazer:\n"
+			print "---------Bem vindo ao sistema de leilão---------\n\nDiga o que deseja fazer:"
 			c=raw_input('0 para listar leilões \n1 para Lançar um novo produto\n2 para apagar usuário\n3 para sair\n\n')
 			if c == '1': # Cliente escolhe lançar novo produto
 				print "---------Lançar Produto---------"
@@ -152,7 +152,7 @@ if __name__ == '__main__':  ###Programa principal
 			elif c == '0':
 				soc.sendall('Lista_leiloes')
 				resp = soc.recv(1024)
-				print 'Lista de leilões iniciados e em pré inscrição'
+				print ("Lista de leilões iniciados e em pré inscrição:")
 				print resp
 					# print 'Lista de leilões futuros'
 			elif c=='2':
