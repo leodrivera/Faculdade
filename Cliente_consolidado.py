@@ -96,7 +96,7 @@ if __name__ == '__main__':  ###Programa principal
 		elif c=='2':
 			soc.sendall('Lista_leiloes')
 			resp=soc.recv(1024)
-			print ("Lista de leilões iniciados e em pré inscrição:")
+			print ("Lista de leilões futuros e em pré inscrição:")
 			print resp
 			#print 'Lista de leilões futuros'
 		while estado==1:
@@ -152,7 +152,7 @@ if __name__ == '__main__':  ###Programa principal
 			elif c == '0':
 				soc.sendall('Lista_leiloes')
 				resp = soc.recv(1024)
-				print ("Lista de leilões iniciados e em pré inscrição:")
+				print ("Lista de leilões futuros e em pré inscrição:")
 				print resp
 					# print 'Lista de leilões futuros'
 			elif c=='2':

@@ -260,9 +260,7 @@ def listar_leiloes():
             str(i.mes) + '/' + str(i.ano) + ' as ' + str(i.hora) + ':' + str(i.minuto) + ':' + str(\
             i.segundo) +'\nO tempo máximo entre lances é de: ' + str(i.t_max) + ' segundos'+\
             '\nO leilao pertence a: ' + str(i.dono) + '\n')
-
-    conn.sendall(str(lista))
-
+    conn.sendall(lista)
 
 def cria_arquivos_leilao():
     try:
