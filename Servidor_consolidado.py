@@ -39,9 +39,18 @@ class leilao: # Classe dos leilões
         self.data_venda=' '
 
         # Método para salvar leilões nos arquivos txt
-    def arquivar_leilao(self):
-        f = open('leiloes_nao_terminados.txt','a') # Escreve as linhas a partir da útlima linha escrita
-        f.write(str(self.identificador)+','+self.nome+','+self.descricao+','+str(self.lance_minimo)+','+str(self.dia)+','+ str(self.mes)+','+str(self.ano)+','+str(self.hora)+','+str(self.minuto)+','+str(self.segundo)+','+str(self.t_max)+','+self.dono+'\n')
+    def arquivar_leilao_futuro(self):
+        f = open('leiloes_futuros.txt','a') # Escreve as linhas a partir da útlima linha escrita
+        f.write(str(self.identificador)+','+self.nome+','+self.descricao+','+str(self.lance_minimo)+','\
+        +str(self.dia)+','+ str(self.mes)+','+str(self.ano)+','+str(self.hora)+','+str(self.minuto)+','\
+        +str(self.segundo)+','+str(self.t_max)+','+self.dono+'\n')
+        f.close()
+
+    def arquivar_leilao_corrente(self):
+        f = open('leiloes_correntes.txt','a') # Escreve as linhas a partir da útlima linha escrita
+        f.write(str(self.identificador)+','+self.nome+','+self.descricao+','+str(self.lance_minimo)+','\
+        +str(self.dia)+','+ str(self.mes)+','+str(self.ano)+','+str(self.hora)+','+str(self.minuto)+','\
+        +str(self.segundo)+','+str(self.t_max)+','+self.dono+'\n')
         f.close()
 """
 Sequência de comandos antiga que salvava no .txt de leilões terminados
@@ -124,7 +133,7 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
         except IOError:
             pass
         try: # Caso o arquivo 'clientes.txt' não exista, ele abre uma exceção de IOError e passa
-            f = open('leiloes_nao_terminados.txt')  # Abre o arquivo leilões não terminados
+            f = open('leiloes_futuros.txt')  # Abre o arquivo leilões não terminados
             for linha in f:  # Percorre todas as linhas do txt (leilões arquivados)
                 c = linha.split(',')
 
@@ -140,7 +149,7 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
 
                 else :
                     #aviso de que algum leilão perdeu a data de inicio com servidor off line
-                    print '\nLeião de '+str(c[0])+' teve momento de início perdido com servidor off-line\n'
+                    print '\nLeilão de '+str(c[0])+' teve momento de início perdido com servidor off-line\n'
 
         except IOError:
             pass
@@ -248,12 +257,47 @@ def teste_de_data(dia,mes,ano,hora,minuto,segundo): # função pra testar se a h
         print '\nLeilão marcado para antes data atual\n'
         return 0
 
+def listagem(l):
+    for i in controle.lista_leiloes_correntes:
+        hora_leilao = str(i.dia)+'/'+str(i.mes)+'/'+str(i.ano),str(i.hora)+':'+str(i.minuto)+':'+str(i.segundo)
+        hora_leilao = datetime.datetime.strptime(hora_leilao, "%d/%m/%Y %H:%M:%S")
+        hora_leilao = time.mktime(hora_leilao.timetuple())
+        if hora_leilao - time.time() <= 30 * 60:
+            controle.lista_leiloes_futuros.remove(i)
+            print 'Abriu o leilão para entrar'
+            #Removo leilão que está há 30 minutos de ser executado da lista de leilões futuros
+            l.acquire()
+            arquivo = open('leiloes_futuros.txt','w')  # atualizando txt com valor dos leilões correntes
+            arquivo.close()
+            temp = open('leiloes_futuros.txt', 'a') #Atualiza os valores no .txt dos leilões correntes
+            for i in controle.lista_leiloes_futuros:
+                temp.write(str(i.identificador) + ',' + i.nome + ',' + i.descricao + ',' + str(i.lance_minimo)\
+                + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto)\
+                + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + i.dono + '\n')
+                l.release()
+                controle.lista_leiloes_correntes.remove(i)
+            temp.close()
+        else:
+            #Remove leilão da lista de leilões correntes
+            l.acquire()
+            arquivo = open('leiloes_correntes.txt','w')  # atualizando txt com valor dos leilões correntes
+            arquivo.close()
+            temp = open('leiloes_correntes.txt', 'a') #Atualiza os valores no .txt dos leilões correntes
+            for i in controle.lista_leiloes_correntes:
+                temp.write(str(i.identificador) + ',' + i.nome + ',' + i.descricao + ',' + str(i.lance_minimo)\
+                + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto)\
+                + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + i.dono + '\n')
+                l.release()
+                controle.lista_leiloes_correntes.remove(i)
+            temp.close()
+
+        else:
+            print 'não é menor'
+
+
 def listar_leiloes():
-    #arquivo = 'Listagem\n\n'
-    arquivo = open('leiloes_nao_terminados.txt','r')  # atualizando txt com valor dos leilões ainda não terminados
+    arquivo = open('leiloes_futuros.txt','r')  # Abro o .txt e envio os dados relativos a ele para o cliente
     lista=""
-    print arquivo
-    print "\n"
     for i in controle.lista_leiloes_futuros:
         lista = ( lista + '\nNome do produto: ' + str(i.nome) + '\nDescrição do produto: ' + str(i.descricao) +\
             '\nLance mínimo: R$' + str(i.lance_minimo) + '\nDia e hora do leilão: ' + str(i.dia) + '/' +\
@@ -264,11 +308,18 @@ def listar_leiloes():
 
 def cria_arquivos_leilao():
     try:
-        f = open('leiloes_nao_terminados.txt')  # Abre o arquivo leiloes_nao_terminados.txt. Se não tiver, ele acusa erro e cria um
+        f = open('leiloes_futuros.txt')  # Abre o arquivo leiloes_futuros.txt. Se não tiver, ele acusa erro e cria um
         f.close()
 
     except IOError:
-        f = open('leiloes_nao_terminados.txt','w')
+        f = open('leiloes_futuros.txt','w')
+
+    try:
+        f = open('leiloes_correntes.txt')  # Abre o arquivo leiloes_futuros.txt. Se não tiver, ele acusa erro e cria um
+        f.close()
+
+    except IOError:
+        f = open('leiloes_correntes','w')
 
     try:
         f = open('numero_de_leiloes_cadastrados.txt')  # Abre o arquivo numero_de_leiloes_cadastrados.txt. Se não tiver, ele acusa erro e cria um
@@ -347,11 +398,11 @@ def servidor(conn,addr):
 
         elif a[0] == 'Desligar':
                                                              ##
-            arquivo = open('leiloes_nao_terminados.txt', 'w') # apagando conteúdo do txt dos leiloes não terminados
+            arquivo = open('leiloes_futuros.txt', 'w') # apagando conteúdo do txt dos leiloes não terminados
             arquivo.close()                                   #
                                                              ##
 
-            arquivo = open('leiloes_nao_terminados.txt', 'w') # atualizando txt com valor dos leilões ainda não terminados
+            arquivo = open('leiloes_futuros.txt', 'w') # atualizando txt com valor dos leilões ainda não terminados
             cont=1
             for i in controle.lista_leiloes_correntes:
                 if teste_de_data(i.dia,i.mes,i.ano,i.h,i.minuto,i.segundo)==1:
@@ -364,22 +415,20 @@ def servidor(conn,addr):
             resp=conn.recv(1024)
             b=resp.split(',')
             if b[0]=='Lanca_produto': # lançamento de novo produto
-                print 'trecho de lançamento de produto\n'
+                print 'Trecho de lançamento de produto\n'
                 #atrib = [0] * (len(b))  #  lista vazia para armazenamento de
 
                 for i in range(3,10):  # Transforma strings de saída da mensagem em floats
                     b[i] = int(float(b[i]))
 
-
                 # Verifica se a data e hora de início de leilão não expirarou
 
                 if teste_de_data(b[4], b[5], b[6], b[7], b[8], b[9]) == 1:
-
                     arquivo = open('numero_de_leiloes_cadastrados.txt', 'r')
                     num_leiloes = 0
                     for lin in arquivo:
                         num_leiloes=lin
-                        print 'numero de leilões cadastrados absorvidos '+str(num_leiloes)+'\n'
+                        print 'Número de leilões cadastrados absorvidos '+str(num_leiloes)+'\n'
                     arquivo.close()
                     num_leiloes=int(num_leiloes)+1
 
@@ -390,9 +439,11 @@ def servidor(conn,addr):
 
                     leilaao = leilao( b[1], b[2], b[3], b[4],b[5],b[6],b[7],b[8],b[9],b[10],name)
                     leilaao.identificador=num_leiloes
-                    controle.leiloes_nao_terminados.append(leilaao)
+                    controle.lista_leiloes_futuros.append(leilaao)
                     controle.lista_leiloes_correntes.append(leilaao)
-                    leilaao.arquivar_leilao()
+                    leilaao.arquivar_leilao_futuro()
+                    leilaao.arquivar_leilao_corrente()
+
                     conn.sendall('ok')
                     print 'Leilão criado com sucesso\n'
                 else:
@@ -407,16 +458,10 @@ def servidor(conn,addr):
 
 
             elif b[0] == 'Apaga_usuario':
-
-
-                print 'cliente resolveu apagar usuario'
-
+                print 'Cliente resolveu apagar usuario'
                 arq = open('clientes.txt','w')  # apagando txt de usuários
                 arq.close()  #
-
-
                 temp=open('clientes.txt','a')
-
                 for ind in controle.lista_usuario:
                     if ind.indice!=logado:
                         print ind.nome+' rearquivado'
@@ -425,21 +470,13 @@ def servidor(conn,addr):
                         flag= ind
                         print ind.nome+' removido'
                 controle.lista_usuario.remove(flag)
-
                 temp.close()
-
-
                 estado=0
                 conn.sendall('ok')
-
-
             elif b[0] == 'Sair':
                 estado=0
-                print 'cliente resolveu sair'
+                print 'Cliente resolveu sair'
                 conn.sendall('ok')
-
-
-#Tenho que criar um segundo Thread para o leilao
 
 
 if __name__ == '__main__':  ###Programa principal
@@ -453,6 +490,8 @@ if __name__ == '__main__':  ###Programa principal
     print "---------Servidor funcionado---------"
     print "Esperando pelos clientes\n"
     controle = controle_geral()  # carrega os usuarios que estavam no clientes.txt
+    lock=threading.Lock()
+    l = threading.Thread(target=listagem, args=(lock,))
     clientes=0
     logado=None
     while 1:
