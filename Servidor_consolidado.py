@@ -20,6 +20,7 @@ class leilao: # Classe dos leilões
     t_max=0
     dono=None
     data_venda=' '
+    participantes=' '
 
     # Contrutor de novos leilões
     def __init__(self,nome, descricao,lance_minimo, dia, mes, ano, hora, minuto, segundo, t_max, dono):
@@ -37,6 +38,7 @@ class leilao: # Classe dos leilões
         self.t_max=t_max
         self.dono=dono
         self.data_venda=' '
+        self.participantes=' '
 
         # Método para salvar leilões nos arquivos txt
     def arquivar_leilao_futuro(self):
@@ -86,7 +88,8 @@ class user:
     # Registrar usuário em clientes.txt
     def arquivar_usuario(self):
         f = open('clientes.txt','a') # Escreve as linhas a partir da útlima linha escrita
-        f.write(self.nome + ',' + self.telefone + ',' + self.endereco + ',' + self.email + ',' + self.senha+','+self.socket1+','+str(self.indice)+'\n')
+        f.write(self.nome + ',' + self.telefone + ',' + self.endereco + ',' + self.email +
+                ',' + self.senha+','+self.socket1+','+str(self.indice)+'\n')
         f.close()
 
 class controle_geral: # Classe que controla os usários do sistema de leilão
@@ -94,6 +97,7 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
     onlines = []  #atributo que guarda os índices na lista_usuario dos usuários que estão online
     lista_leiloes_futuros=[]
     lista_leiloes_correntes=[] # atributo onde estarão os leilões iniciados para monitoramento
+    inicios_de_leilao=[]
 
     def adc_usuario(self,usuario):  # Método para adicionar novo usuário à lista
         self.lista_usuario.append(usuario)           # Inclusão do usuário no atributo lista
@@ -117,17 +121,21 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
 
         print '\nDentro do .txt dos leilões não terminados tem:'
         for i in self.lista_leiloes_futuros:
-            print str(i.nome)+', pertecente a '+i.dono+' para dia: '+str(int(i.dia))+'/'+str(int(i.mes))+'/'+str(int(i.ano))+' as '+str(int(i.hora))+':'+str(int(i.minuto))+'h'
+            print str(i.nome)+', pertecente a '+i.dono+' para dia: '+str(int(i.dia))\
+                  +'/'+str(int(i.mes))+'/'+str(int(i.ano))+' as '+str(int(i.hora))+\
+                  ':'+str(int(i.minuto))+'h'
 
     def __init__(self): #metodo para carregar usuários do txt
         self.onlines = []
         self.lista_usuario=[]
+        self.inicios_de_leilao=[]
         print 'Iniciando controle de usuários...\n'
         try:  # Caso o arquivo 'clientes.txt' não exista, ele abre uma exceção de IOError e passa
             f = open('clientes.txt')  # Abre o arquivo clientes
             for linha in f: # Percorre todas as linhas do txt
                 linha=linha.split(',')
-                linha[0] = user(str(linha[0]), str(linha[1]), str(linha[2]), str(linha[3]),str(linha[4]),str(linha[5]+','+linha[6]),str(linha[7])) # Transforma linhas do txt em objetos da classe user
+                linha[0] = user(str(linha[0]), str(linha[1]), str(linha[2]), str(linha[3])
+                                ,str(linha[4]),str(linha[5]+','+linha[6]),str(linha[7])) # Transforma linhas do txt em objetos da classe user
                 self.lista_usuario.append(linha[0])
             f.close()
         except IOError:
@@ -140,17 +148,25 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
                 for i in range(3,10):  # Transforma strings de saída do txt em floats
                     c[i]=int(float(c[i]))
 
-                if teste_de_data(c[4], c[5], c[6], c[7], c[8], c[9]) == 1: # Verifica se a data e hora de início de leilões arquivados não expiraram
+                if teste_de_data(c[4], c[5], c[6], c[7], c[8], c[9],0) == 1: # Verifica se a data e hora de início de leilões arquivados não expiraram
                     leilaao = leilao(str(c[1]), str(c[2]), str(c[3]), str(c[4]), str(c[5]), str(c[6]), \
                      str(c[7]), str(c[8]), str(c[9]), str(c[10]), str(c[11].strip()))
                     # Transforma linhas do txt em objetos da classe user. O último elemento precisa do .strip() por causa do \n
                     leilaao.identificador=c[0] #Salvando identificador do leilão
                     self.lista_leiloes_futuros.append(leilaao)
 
+                    hora_leilao = str(c[4]) + '/' + str(c[5]) + '/' + str(c[6]) + ' ' + str(c[7]) + ':' + str(c[8]) \
+                                  + ':' + str(c[9])  # para verificação se data é no futuro
+                    hora_leilao = datetime.datetime.strptime(hora_leilao, "%d/%m/%Y %H:%M:%S")
+                    hora_leilao = time.mktime(hora_leilao.timetuple())
+
+                    self.inicios_de_leilao.append([c[0],hora_leilao])
+
+
                 else :
                     #aviso de que algum leilão perdeu a data de inicio com servidor off line
                     print '\nLeilão de '+str(c[0])+' teve momento de início perdido com servidor off-line\n'
-
+            print self.inicios_de_leilao
         except IOError:
             pass
         self.imprime_aquisicoes()
@@ -181,6 +197,12 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
             if i.nome == nome:
                 i.socket1=sock
 
+def iniciador_de_leiloes():
+    while 1:
+        for i in controle.inicios_de_leilao:
+            if i[2]
+
+
 def envio(destinatario,mensagem): # Função para envio de mensagem com repetição em caso de erro na transmisssão
     while(1):
         try:
@@ -210,10 +232,41 @@ def recebimento(canal):  # Função para recepção de mensagens com repetição
 
 #def envia_listagem():
 
-def teste_de_data(dia,mes,ano,hora,minuto,segundo): # função pra testar se a hora e data do leilão é no futuro
+def teste_de_data(dia,mes,ano,hora,minuto,segundo,flag): # função pra testar se a hora e data do leilão é no futuro
 
-    agora = datetime.datetime.now()  # aquisição de hora e data do pc
 
+
+    hora_leilao = str(dia) + '/' + str(mes) + '/' + str(ano) + ' ' + str(hora) + ':' + str(minuto) \
+                  + ':' + str(segundo)  # para verificação se data é no futuro
+    hora_leilao = datetime.datetime.strptime(hora_leilao, "%d/%m/%Y %H:%M:%S")
+    hora_leilao = time.mktime(hora_leilao.timetuple())
+
+    temp = datetime.datetime.now()
+    agora = str(temp.day) + '/' + str(temp.month) + '/' + str(temp.year) + ' ' + str(temp.hour) + ':' + str(
+        temp.minute) + ':' + str(temp.second)
+    agora = datetime.datetime.strptime(agora, "%d/%m/%Y %H:%M:%S")
+    agora = time.mktime(agora.timetuple())
+
+
+    if flag != 0:
+        agora = agora + 30*60
+
+    if agora < hora_leilao:
+        return 1
+    else:
+        return 0
+
+
+
+
+
+
+
+
+
+
+
+"""
     try:
         if ano < float(agora.year):
             print 'Ano anterior'
@@ -258,52 +311,70 @@ def teste_de_data(dia,mes,ano,hora,minuto,segundo): # função pra testar se a h
         return 0
 
 def listagem(l):
-    for i in controle.lista_leiloes_correntes:
-        hora_leilao = str(i.dia)+'/'+str(i.mes)+'/'+str(i.ano),str(i.hora)+':'+str(i.minuto)+':'+str(i.segundo)
-        hora_leilao = datetime.datetime.strptime(hora_leilao, "%d/%m/%Y %H:%M:%S")
-        hora_leilao = time.mktime(hora_leilao.timetuple())
-        if hora_leilao - time.time() <= 30 * 60:
-            controle.lista_leiloes_futuros.remove(i)
-            print 'Abriu o leilão para entrar'
-            #Removo leilão que está há 30 minutos de ser executado da lista de leilões futuros
-            l.acquire()
-            arquivo = open('leiloes_futuros.txt','w')  # atualizando txt com valor dos leilões correntes
-            arquivo.close()
-            temp = open('leiloes_futuros.txt', 'a') #Atualiza os valores no .txt dos leilões correntes
-            for i in controle.lista_leiloes_futuros:
-                temp.write(str(i.identificador) + ',' + i.nome + ',' + i.descricao + ',' + str(i.lance_minimo)\
-                + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto)\
-                + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + i.dono + '\n')
-                l.release()
-                controle.lista_leiloes_correntes.remove(i)
-            temp.close()
-        else:
-            #Remove leilão da lista de leilões correntes
-            l.acquire()
-            arquivo = open('leiloes_correntes.txt','w')  # atualizando txt com valor dos leilões correntes
-            arquivo.close()
-            temp = open('leiloes_correntes.txt', 'a') #Atualiza os valores no .txt dos leilões correntes
-            for i in controle.lista_leiloes_correntes:
-                temp.write(str(i.identificador) + ',' + i.nome + ',' + i.descricao + ',' + str(i.lance_minimo)\
-                + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto)\
-                + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + i.dono + '\n')
-                l.release()
-                controle.lista_leiloes_correntes.remove(i)
-            temp.close()
+    global controle
+    while 1:
+        for i in controle.lista_leiloes_correntes:
+            hora_leilao = str(i.dia)+'/'+str(i.mes)+'/'+str(i.ano),str(i.hora)+':'+str(i.minuto)+':'+str(i.segundo)
+            hora_leilao = datetime.datetime.strptime(hora_leilao, "%d/%m/%Y %H:%M:%S")
+            hora_leilao = time.mktime(hora_leilao.timetuple())
+            if hora_leilao - time.time() <= 30 * 60:
+                controle.lista_leiloes_futuros.remove(i)
+                print 'Abriu o leilão para entrar'
+                #Removo leilão que está há 30 minutos de ser executado da lista de leilões futuros
+                l.acquire()
+                arquivo = open('leiloes_futuros.txt','w')  # atualizando txt com valor dos leilões correntes
+                arquivo.close()
+                temp = open('leiloes_futuros.txt', 'a') #Atualiza os valores no .txt dos leilões correntes
+                for i in controle.lista_leiloes_futuros:
+                    temp.write(str(i.identificador) + ',' + i.nome + ',' + i.descricao + ',' + str(i.lance_minimo)\
+                    + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto)\
+                    + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + i.dono + '\n')
+                    l.release()
+                    controle.lista_leiloes_correntes.remove(i)
+                temp.close()
+            else:
+                #Remove leilão da lista de leilões correntes
+                l.acquire()
+                arquivo = open('leiloes_correntes.txt','w')  # atualizando txt com valor dos leilões correntes
+                arquivo.close()
+                temp = open('leiloes_correntes.txt', 'a') #Atualiza os valores no .txt dos leilões correntes
+                for i in controle.lista_leiloes_correntes:
+                    temp.write(str(i.identificador) + ',' + i.nome + ',' + i.descricao + ',' + str(i.lance_minimo)\
+                    + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto)\
+                    + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + i.dono + '\n')
+                    l.release()
+                    controle.lista_leiloes_correntes.remove(i)
+                temp.close()
 
-        else:
-            print 'não é menor'
+            else:
 
+                print 'não é menor'
+"""
 
 def listar_leiloes():
     arquivo = open('leiloes_futuros.txt','r')  # Abro o .txt e envio os dados relativos a ele para o cliente
-    lista=""
+    lista = ""
+    lista1 = '\nLeilões em que você está apto a participar:\n'
+    lista2 = "\nLeilões futuros com mais de 30 minutos para iniciar:\n"
+
     for i in controle.lista_leiloes_futuros:
-        lista = ( lista + '\nNome do produto: ' + str(i.nome) + '\nDescrição do produto: ' + str(i.descricao) +\
-            '\nLance mínimo: R$' + str(i.lance_minimo) + '\nDia e hora do leilão: ' + str(i.dia) + '/' +\
-            str(i.mes) + '/' + str(i.ano) + ' as ' + str(i.hora) + ':' + str(i.minuto) + ':' + str(\
-            i.segundo) +'\nO tempo máximo entre lances é de: ' + str(i.t_max) + ' segundos'+\
-            '\nO leilao pertence a: ' + str(i.dono) + '\n')
+        hora_leilao = str(i.dia) + '/' + str(i.mes) + '/' + str(i.ano) + ' ' + str(i.hora) + ':' + str(i.minuto) + ':' + str(i.segundo)
+        hora_leilao = datetime.datetime.strptime(hora_leilao, "%d/%m/%Y %H:%M:%S")
+        hora_leilao = time.mktime(hora_leilao.timetuple())
+
+        if hora_leilao - time.time() <= 30 * 60:
+            lista1 = ( lista1 + '\nNome do produto: ' + str(i.nome) + '\nDescrição do produto: ' + str(i.descricao) +\
+                '\nLance mínimo: R$' + str(i.lance_minimo) + '\nDia e hora do leilão: ' + str(i.dia) + '/' +\
+                str(i.mes) + '/' + str(i.ano) + ' as ' + str(i.hora) + ':' + str(i.minuto) + ':' + str(\
+                i.segundo) +'\nO tempo máximo entre lances é de: ' + str(i.t_max) + ' segundos'+\
+                '\nO leilao pertence a: ' + str(i.dono) + '\n')
+        else :
+            lista2 = (lista2 + '\nNome do produto: ' + str(i.nome) + '\nDescrição do produto: ' + str(i.descricao) + \
+                '\nLance mínimo: R$' + str(i.lance_minimo) + '\nDia e hora do leilão: ' + str(i.dia) + '/' + \
+                str(i.mes) + '/' + str(i.ano) + ' as ' + str(i.hora) + ':' + str(i.minuto) + ':' + str( \
+                i.segundo) + '\nO tempo máximo entre lances é de: ' + str(i.t_max) + ' segundos' + \
+                '\nO leilao pertence a: ' + str(i.dono) + '\n')
+    lista = lista1+lista2
     conn.sendall(lista)
 
 def cria_arquivos_leilao():
@@ -313,20 +384,22 @@ def cria_arquivos_leilao():
 
     except IOError:
         f = open('leiloes_futuros.txt','w')
-
+        f.close()
     try:
         f = open('leiloes_correntes.txt')  # Abre o arquivo leiloes_futuros.txt. Se não tiver, ele acusa erro e cria um
         f.close()
 
     except IOError:
         f = open('leiloes_correntes','w')
-
+        f.close()
     try:
         f = open('numero_de_leiloes_cadastrados.txt')  # Abre o arquivo numero_de_leiloes_cadastrados.txt. Se não tiver, ele acusa erro e cria um
         f.close()
 
     except IOError:
         f = open('numero_de_leiloes_cadastrados.txt','w')
+        f.write('0')
+        f.close()
 
 #Servidor Thread
 def servidor(conn,addr):
@@ -405,7 +478,7 @@ def servidor(conn,addr):
             arquivo = open('leiloes_futuros.txt', 'w') # atualizando txt com valor dos leilões ainda não terminados
             cont=1
             for i in controle.lista_leiloes_correntes:
-                if teste_de_data(i.dia,i.mes,i.ano,i.h,i.minuto,i.segundo)==1:
+                if teste_de_data(i.dia,i.mes,i.ano,i.h,i.minuto,i.segundo,0)==1:
                     arquivo.write(i.nome + ',' + i.descricao + ',' + str(i.lance_minimo) + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto) + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + i.dono + +','+str(cont)+'\n')
                     cont=cont+1
                     # aqui vai comando pra matar thread
@@ -423,7 +496,7 @@ def servidor(conn,addr):
 
                 # Verifica se a data e hora de início de leilão não expirarou
 
-                if teste_de_data(b[4], b[5], b[6], b[7], b[8], b[9]) == 1:
+                if teste_de_data(b[4], b[5], b[6], b[7], b[8], b[9],0) == 1:
                     arquivo = open('numero_de_leiloes_cadastrados.txt', 'r')
                     num_leiloes = 0
                     for lin in arquivo:
@@ -440,10 +513,16 @@ def servidor(conn,addr):
                     leilaao = leilao( b[1], b[2], b[3], b[4],b[5],b[6],b[7],b[8],b[9],b[10],name)
                     leilaao.identificador=num_leiloes
                     controle.lista_leiloes_futuros.append(leilaao)
-                    controle.lista_leiloes_correntes.append(leilaao)
+                    #controle.lista_leiloes_correntes.append(leilaao)
                     leilaao.arquivar_leilao_futuro()
-                    leilaao.arquivar_leilao_corrente()
+                    #leilaao.arquivar_leilao_corrente()
+                    hora_leilao = str(b[4]) + '/' + str(b[5]) + '/' + str(b[6]) + ' ' + str(b[7]) + ':' + str(b[8]) \
+                                  + ':' + str(b[9])  # para verificação se data é no futuro
+                    hora_leilao = datetime.datetime.strptime(hora_leilao, "%d/%m/%Y %H:%M:%S")
+                    hora_leilao = time.mktime(hora_leilao.timetuple())
 
+                    controle.inicios_de_leilao.append([leilaao.identificador, hora_leilao])
+                    print controle.inicios_de_leilao
                     conn.sendall('ok')
                     print 'Leilão criado com sucesso\n'
                 else:
@@ -490,8 +569,10 @@ if __name__ == '__main__':  ###Programa principal
     print "---------Servidor funcionado---------"
     print "Esperando pelos clientes\n"
     controle = controle_geral()  # carrega os usuarios que estavam no clientes.txt
-    lock=threading.Lock()
-    l = threading.Thread(target=listagem, args=(lock,))
+    ini = threading.Thread(target=iniciador_de_leiloes, args=(controle.inicios_de_leilao))
+    ini.start()
+    #lock=threading.Lock()
+    #l = threading.Thread(target=listagem, args=(lock,))
     clientes=0
     logado=None
     while 1:
