@@ -35,7 +35,7 @@ if __name__ == '__main__':  ###Programa principal
 	PORT = 50000  # The same port as used by the server
 	soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #IPv4,tipo de socket
 	soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #forçar que o socket desaloque a porta quando fechar o código
-
+	flag=0
 	while 1: #loop para o cliente não travar caso o servidor não tenha sido aberto
 		try:
 			soc.connect((HOST, PORT))  #Abre uma conexão com IP e porta especificados
@@ -96,12 +96,18 @@ if __name__ == '__main__':  ###Programa principal
 		elif c=='2':
 			soc.sendall('Lista_leiloes')
 			resp=soc.recv(1024)
-			print ("Lista de leilões futuros e em pré inscrição:")
 			print resp
 			#print 'Lista de leilões futuros'
 		while estado==1:
-			print "---------Bem vindo ao sistema de leilão---------\n\nDiga o que deseja fazer:"
-			c=raw_input('0 para listar leilões \n1 para Lançar um novo produto\n2 para apagar usuário\n3 para sair\n\n')
+			if flag==0:
+				print "---------Bem vindo ao sistema de leilão---------\n\nDiga o que deseja fazer:"
+				c=raw_input('0 para listar leilões \n1 para Lançar um novo produto\n2 para apagar usuário\n3 para sair\n'+\
+							'4 para entrar em leilão\n')
+			else:
+				print "Diga o que deseja fazer:"
+				c = raw_input(
+					'0 para listar leilões \n1 para Lançar um novo produto\n2 para apagar usuário\n3 para sair\n' + \
+					'4 para entrar em leilão\n5 para dar lance')
 			if c == '1': # Cliente escolhe lançar novo produto
 				print "---------Lançar Produto---------"
 				while 1:  #Laço do Lança_Produto
@@ -152,7 +158,6 @@ if __name__ == '__main__':  ###Programa principal
 			elif c == '0':
 				soc.sendall('Lista_leiloes')
 				resp = soc.recv(1024)
-				print ("Lista de leilões futuros e em pré inscrição:")
 				print resp
 					# print 'Lista de leilões futuros'
 			elif c=='2':
@@ -173,6 +178,23 @@ if __name__ == '__main__':  ###Programa principal
 					estado = 0
 				else:
 					print '\nErro ao deslogar usuário, tente novamente mais tarde\n'
+
+			elif c==4:
+				d=raw_input('Digite o índice do leilão:\n')
+				soc.sendall('Entrar_leilao,'+d)
+
+
+				PORT1 = PORT + int(float(d)) # The same port as used by the server
+				soc_temp='conexao'+d
+				globals()[soc_temp] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket
+				globals()[soc_temp].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)  # forçar que o socket desaloque a porta quando fechar o código
+
+			elif c==5:
+				if flag==0:
+					print 'Opção inválida, cliente não está participando de nenhum leilão'
+
+				else:
+					e=raw_input(digite)
 
 
 
