@@ -9,6 +9,7 @@ class leilao: # Classe dos leilões
     descricao=' '
     lance_minimo=0
     lance_corrente=0
+    vencedor_corrente=None
     lance_vencedor=0
     dia=0
     mes=0
@@ -27,7 +28,8 @@ class leilao: # Classe dos leilões
         self.nome=nome
         self.descricao=descricao
         self.lance_minimo=lance_minimo
-        self.lance_corrente=lance_minimo
+        self.lance_corrente=lance_minimo # protegida
+        self.vencedor_corrente=' ' # protegida
         self.lance_vencedor=lance_minimo
         self.dia=dia
         self.mes=mes
@@ -38,7 +40,7 @@ class leilao: # Classe dos leilões
         self.t_max=t_max
         self.dono=dono
         self.data_venda=' '
-        self.participantes=' '
+        self.participantes=' '# inútil por enquanto
 
         # Método para salvar leilões nos arquivos txt
     def arquivar_leilao_futuro(self):
@@ -208,11 +210,34 @@ def iniciador_de_leiloes(): # Rotina que monitora o início dos leilões
         agora = time.mktime(agora.timetuple())
 
         for i in controle.inicios_de_leilao:
-            if int(float(i[1])) < agora:
+            if int(float(i[1])) < agora+30*60: # inicia 30 minutos antes de o leilão poder receber lances
                 print 'rotina de iniciar leilão '
+                cont=0
+                for ind in controle.lista_leiloes_futuros:
+                    if ind.identificador==i[0]:
+                        temp2=ind
+                        break
+                    cont=cont+1
+                sem1='semaforo_lance_vencedor'+str(temp2.identificador)
+                sem2='semaforo_vencedor_corrente'+str(temp2.identificador)
+                globals()[sem1]=threading.BoundedSemaphore()
+                globals()[sem2] = threading.BoundedSemaphore()
+                temp3=len(controle.lista_leiloes_correntes)
+                print controle.lista_leiloes_futuros
+                print controle.lista_leiloes_correntes
+                controle.lista_leiloes_correntes.append(controle.lista_leiloes_futuros.pop(cont))
+                time.sleep(0.5)
+                print controle.lista_leiloes_futuros
+                print controle.lista_leiloes_correntes
+                controle.inicios_de_leilao.remove(i)
             else:
                 print 'leilão não está pronto'
+                a=1
+
         time.sleep(2)
+
+def mata_leilao(indice):
+    tempo=controle
 
 
 def envio(destinatario,mensagem): # Função para envio de mensagem com repetição em caso de erro na transmisssão
