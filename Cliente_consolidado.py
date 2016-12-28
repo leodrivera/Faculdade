@@ -179,15 +179,28 @@ if __name__ == '__main__':  ###Programa principal
 				else:
 					print '\nErro ao deslogar usuário, tente novamente mais tarde\n'
 
-			elif c==4:
+			elif c=='4':
 				d=raw_input('Digite o índice do leilão:\n')
 				soc.sendall('Entrar_leilao,'+d)
 
+				resp=soc.recv(1024)
 
-				PORT1 = PORT + int(float(d)) # The same port as used by the server
-				soc_temp='conexao'+d
-				globals()[soc_temp] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket
-				globals()[soc_temp].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)  # forçar que o socket desaloque a porta quando fechar o código
+				if resp=='ok':
+					PORT1 = PORT + int(float(d)) # The same port as used by the server
+					soc_temp='conexao'+d
+					globals()[soc_temp] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket
+					globals()[soc_temp].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)  # forçar que o socket desaloque a porta quando fechar o código
+					while 1:  # loop para o cliente não travar caso o servidor não tenha sido aberto
+						try:
+							globals()[soc_temp].connect((HOST, PORT1))  # Abre uma conexão com IP e porta especificados
+							break
+						except:
+							time.sleep(1)
+					resp=globals()[soc_temp].recv(1024)
+					print resp
+
+				else:
+					print 'Índice de leilão inválido'
 
 			elif c==5:
 				if flag==0:

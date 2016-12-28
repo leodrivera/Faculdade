@@ -198,41 +198,37 @@ def iniciador_de_leiloes(): # Rotina que monitora o início dos leilões
 
         for i in controle.inicios_de_leilao:
             if int(float(i[1])) < agora+30*60: # inicia 30 minutos antes de o leilão poder receber lances
-                print 'rotina de iniciar leilão '
+
                 cont=0
                 for ind in controle.lista_leiloes_futuros:
                     if ind.identificador==i[0]:
                         temp2=ind
                         break
                     cont=cont+1
-                sem1='semaforo_lance_vencedor'+str(temp2.identificador) # Nome para semaforo protetor do lance corrente
-                sem2='semaforo_vencedor_corrente'+str(temp2.identificador) # Nome para semaforo protetor do nome do vencedor corrente
-                globals()[sem1]=threading.BoundedSemaphore() # semaforo protetor do lance corrente
-                globals()[sem2] = threading.BoundedSemaphore() #semaforo protetor do nome do vencedor corrente
-                temp3=len(controle.lista_leiloes_correntes)
+                sem1='sem_lv'+str(temp2.identificador) # Nome para semaforo protetor do lance corrente
+                sem2='sem_vc'+str(temp2.identificador) # Nome para semaforo protetor do nome do vencedor corrente
+                sem3='sem_lp'+str(temp2.identificador)
+                globals()[sem1] = threading.BoundedSemaphore() # semaforo protetor do lance corrente
+                globals()[sem2] = threading.BoundedSemaphore() # semaforo protetor do nome do vencedor corrente
+                globals()[sem3] = threading.BoundedSemaphore() # semaforo protetor da lista de participantes
 
                 indice=len(controle.lista_leiloes_correntes)
                 controle.lista_leiloes_correntes.append(controle.lista_leiloes_futuros.pop(cont)) #Troca lista de armazenamento
                                                                                                   #do leilão
 
                 #chama thread mata leilão
-                killer=threading.Thread(target=mata_leilao, args=(indice,))
-                killer.start()
+                matador=threading.Thread(target=mata_leilao, args=(indice,))
+                matador.start()
 
-                HOST1 = ''  # Symbolic name meaning all available interfaces
-                PORT1 = 50000+controle.lista_leiloes_correntes[indice].identificador  # Arbitrary non-privileged port
-                com2='s'+str(controle.lista_leiloes_correntes[indice].identificador)
-                globals()[com2] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket (TCP)
-                globals()[com2].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)  # forçar que o socket desaloque a porta quando fechar o código
-                globals()[com2].bind((HOST1, PORT1))  # liga o socket com IP e porta
-
+                escutador = threading.Thread(target=escuta_participantes, args=(indice,))
+                escutador.start()
 
                 controle.inicios_de_leilao.remove(i) #remove leilão da estrutura de verificação de início
 
         time.sleep(2)
 
-def mata_leilao(indice):
-
+def mata_leilao(indice): # Thread que veirifica se cada leilão teve lances no período nescessário para ser finalizado
+    global controle      # quando não houve finaliza-se o leilão, quando houve calcul-se o tempo até a próxima verificação
     temax=controle.lista_leiloes_correntes[indice].t_max
 
     while 1:
@@ -243,13 +239,38 @@ def mata_leilao(indice):
         agora = time.mktime(agora.timetuple())
 
         soneca=float(controle.lista_leiloes_correntes[indice].hora_ultimo_lance) - float(agora) + float(temax)
-        print 'tempo:',soneca
+
         antigo_lance=controle.lista_leiloes_correntes[indice].lance_corrente
         time.sleep(soneca)
         if controle.lista_leiloes_correntes[indice].lance_corrente==antigo_lance:
             #mata leilão
             print 'matei leilão'
             time.sleep(5)
+
+def escuta_participantes(indice):
+    global controle
+
+
+    HOST1 = ''  # Symbolic name meaning all available interfaces
+    PORT1 = 50000 + int(float(controle.lista_leiloes_correntes[indice].identificador))  # Arbitrary non-privileged port
+    com2 = 's' + str(controle.lista_leiloes_correntes[indice].identificador)
+    globals()[com2] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket (TCP)
+    globals()[com2].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)  # forçar que o socket desaloque a porta quando fechar o código
+    globals()[com2].bind((HOST1, PORT1))  # liga o socket com IP e porta
+
+    while 1:
+        globals()[com2].listen(1)
+        canal_envio, addr2 = globals()[com2].accept()
+        falador = threading.Thread(target=envia_lances, args=(canal_envio, addr2))
+        falador.start()
+
+def envia_lances(canal_envio,addr2):
+
+    global controle
+    canal_envio.sendall('\nConexão estabelecida para relatórios de leilão\n')
+    while cliente on
+
+
 
 
 def envio(destinatario,mensagem): # Função para envio de mensagem com repetição em caso de erro na transmisssão
@@ -501,21 +522,39 @@ def servidor(conn,addr):
                 conn.sendall('ok')
 
             elif b[0]=='Entrar_leilao':
+
                 flag3=0
                 cont=0
                 for i in controle.lista_leiloes_correntes:
-                    if b[1]==i.identificador:
+
+                    if b[1] == str(i.identificador):
+                        b[1] = int(float(b[1]))
                         conn.sendall('ok')
-                        flag3=1
-                        i.participantes.append([controle.lista_usuario[logado].nome, controle.lista_usuario[logado].])
+                        flag3 = 1
+                        time.sleep(0.4)
+                        prote='sem_lp'+str(i.identificador)
+                        globals()[prote].acquire()
+                        i.participantes.append([int(float(logado)), 0])
+                        print i.participantes
+                        globals()[prote].release()
                         break
                     cont=cont+1
+
                 if flag3==0:
                     conn.sendall('not_ok')
 
 
+
+
             elif b[0] == 'Sair':
                 estado=0
+                for i in controle.lista_leiloes_correntes:
+                    for ii in i.participantes:
+                        if ii[1]==int(float(logado)):
+                            prote = 'sem_lp' + str(i.identificador)
+                            globals()[prote].acquire()
+                            ii[2]=1
+                            globals()[prote].release()
                 print 'Cliente resolveu sair'
                 conn.sendall('ok')
 
