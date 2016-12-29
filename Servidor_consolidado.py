@@ -205,11 +205,16 @@ def iniciador_de_leiloes(): # Rotina que monitora o início dos leilões
                         temp2=ind
                         break
                     cont=cont+1
-                sem1='sem_lv'+str(temp2.identificador) # Nome para semaforo protetor do lance corrente
-                sem2='sem_vc'+str(temp2.identificador) # Nome para semaforo protetor do nome do vencedor corrente
-                sem3='sem_lp'+str(temp2.identificador)
-                globals()[sem1] = threading.BoundedSemaphore() # semaforo protetor do lance corrente
-                globals()[sem2] = threading.BoundedSemaphore() # semaforo protetor do nome do vencedor corrente
+
+                #ferramentas para tratamento leitores-escritores no lance corrente e vencedor corrente
+                sem1 = 'mutex_lc'+str(temp2.identificador)
+                sem2 = 'wrt_lc'+str(temp2.identificador)
+                readcount = 'readcount_lc'+str(temp2.identificador)
+                globals()[sem1] = threading.BoundedSemaphore()
+                globals()[sem2] = threading.BoundedSemaphore()
+                globals()[readcount]=0
+
+                sem3 = 'sem_lp' + str(temp2.identificador)
                 globals()[sem3] = threading.BoundedSemaphore() # semaforo protetor da lista de participantes
 
                 indice=len(controle.lista_leiloes_correntes)
@@ -261,15 +266,21 @@ def escuta_participantes(indice):
     while 1:
         globals()[com2].listen(1)
         canal_envio, addr2 = globals()[com2].accept()
-        falador = threading.Thread(target=envia_lances, args=(canal_envio, addr2))
+        falador = threading.Thread(target=envia_lances, args=(canal_envio, addr2, indice))
         falador.start()
 
-def envia_lances(canal_envio,addr2):
+def envia_lances(canal_envio,addr2,indice):
+    wrt = 'wrt_lc' + str(controle.lista_leiloes_correntes[indice].identificador)
+    readcount = 'readcount_lc' + str(controle.lista_leiloes_correntes[indice].identificador)
+    mutex = 'mutex_lc' + str(controle.lista_leiloes_correntes[indice].identificador)
 
     global controle
     canal_envio.sendall('\nConexão estabelecida para relatórios de leilão\n')
-    while cliente on
+    while 1:
+        time.sleep(0.2)
 
+        globals()[mutex].acquire()
+        globals()[readcount]=globals()[readcount]+1
 
 
 
@@ -543,9 +554,6 @@ def servidor(conn,addr):
                 if flag3==0:
                     conn.sendall('not_ok')
 
-
-
-
             elif b[0] == 'Sair':
                 estado=0
                 for i in controle.lista_leiloes_correntes:
@@ -553,7 +561,7 @@ def servidor(conn,addr):
                         if ii[1]==int(float(logado)):
                             prote = 'sem_lp' + str(i.identificador)
                             globals()[prote].acquire()
-                            ii[2]=1
+                            i.remov(ii)
                             globals()[prote].release()
                 print 'Cliente resolveu sair'
                 conn.sendall('ok')
