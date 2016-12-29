@@ -10,6 +10,7 @@ class leilao: # Classe dos leilões
     lance_minimo=0
     lance_corrente=0
     vencedor_corrente=None
+    conta_lances=0
     lance_vencedor=0
     hora_ultimo_lance=0
     dia=0
@@ -30,13 +31,14 @@ class leilao: # Classe dos leilões
         self.descricao=descricao
         self.lance_minimo=lance_minimo
         self.lance_corrente=lance_minimo # protegida
-        self.vencedor_corrente='Agrardando o envio' # protegida
+        self.vencedor_corrente='Aguardando o envio' # protegida
 
         hora_leilao = str(dia) + '/' + str(mes) + '/' + str(ano) + ' ' + str(hora) + ':' + str(minuto) \
                       + ':' + str(segundo)  # para verificação se data é no futuro
         hora_leilao = datetime.datetime.strptime(hora_leilao, "%d/%m/%Y %H:%M:%S")
         hora_leilao = time.mktime(hora_leilao.timetuple())
 
+        self.conta_lances=0
         self.hora_ultimo_lance=hora_leilao # protegida
         self.lance_vencedor=lance_minimo
         self.dia=dia
@@ -207,15 +209,24 @@ def iniciador_de_leiloes(): # Rotina que monitora o início dos leilões
                     cont=cont+1
 
                 #ferramentas para tratamento leitores-escritores no lance corrente e vencedor corrente
-                sem1 = 'mutex_lc'+str(temp2.identificador)
-                sem2 = 'wrt_lc'+str(temp2.identificador)
-                readcount = 'readcount_lc'+str(temp2.identificador)
-                globals()[sem1] = threading.BoundedSemaphore()
-                globals()[sem2] = threading.BoundedSemaphore()
-                globals()[readcount]=0
 
-                sem3 = 'sem_lp' + str(temp2.identificador)
-                globals()[sem3] = threading.BoundedSemaphore() # semaforo protetor da lista de participantes
+                readcount = 'readcount_lc'+str(temp2.identificador)
+                globals()[readcount]=0
+                writecount = 'writercount_lc'+str(temp2.identificador)
+                globals()[writecount]=0
+
+                rmutex='rmutex_lc' + str(temp2.identificador)
+                globals()[rmutex] = threading.BoundedSemaphore()
+                wmutex = 'wmutex_lc' + str(temp2.identificador)
+                globals()[wmutex] = threading.BoundedSemaphore()
+                resource = 'resource_lc' + str(temp2.identificador)
+                globals()[resource] = threading.BoundedSemaphore()
+                readTry = 'readTry_lc' + str(temp2.identificador)
+                globals()[readTry] = threading.BoundedSemaphore()
+
+                prote = 'sem_lp' + str(temp2.identificador)
+                globals()[prote]=threading.BoundedSemaphore()
+
 
                 indice=len(controle.lista_leiloes_correntes)
                 controle.lista_leiloes_correntes.append(controle.lista_leiloes_futuros.pop(cont)) #Troca lista de armazenamento
@@ -266,52 +277,48 @@ def escuta_participantes(indice):
     while 1:
         globals()[com2].listen(1)
         canal_envio, addr2 = globals()[com2].accept()
-        falador = threading.Thread(target=envia_lances, args=(canal_envio, addr2, indice))
-        falador.start()
+        falador1 = threading.Thread(target=sincrono_lances, args=(canal_envio, indice))
+        falador1.start()
 
-def envia_lances(canal_envio,addr2,indice):
-    wrt = 'wrt_lc' + str(controle.lista_leiloes_correntes[indice].identificador)
-    readcount = 'readcount_lc' + str(controle.lista_leiloes_correntes[indice].identificador)
-    mutex = 'mutex_lc' + str(controle.lista_leiloes_correntes[indice].identificador)
+        falador2 = threading.Thread(target=assincrono_lances, args=(canal_envio, indice))
+        falador2.start()
 
+def sincrono_lances(canal_envio,indice):
     global controle
+
     canal_envio.sendall('\nConexão estabelecida para relatórios de leilão\n')
+
+    while 1:
+        time.sleep(1)
+        mensagem(canal_envio,indice)
+
+
+def assincrono_lances(canal_envio, indice):
+    acquire_leitor(controle.lista_leiloes_correntes[indice].identificador)
+    antigo=controle.lista_leiloes_correntes[indice].lance_corrente
+    release_leitor(controle.lista_leiloes_correntes[indice].identificador)
     while 1:
         time.sleep(0.2)
+        acquire_leitor(controle.lista_leiloes_correntes[indice].identificador)
+        novo = controle.lista_leiloes_correntes[indice].lance_corrente
+        release_leitor(controle.lista_leiloes_correntes[indice].identificador)
+        if novo!=antigo:
+            mensagem(canal_envio,indice)
 
-        globals()[mutex].acquire()
-        globals()[readcount]=globals()[readcount]+1
 
 
+def mensagem(canal_envio,indice):
+    acquire_leitor(controle.lista_leiloes_correntes[indice].identificador)
+    mensagem = 'Leilão número ' + str(controle.lista_leiloes_correntes[indice].identificador) + '\n' \
+               + 'Vencedor até o momento: ' + controle.lista_leiloes_correntes[indice].vencedor_corrente + '\n' \
+               + 'Lance vencedor até o momento: ' + str(controle.lista_leiloes_correntes[indice].lance_corrente) + '\n' \
+               + 'Número de usuários participantes: ' + str(
+        len(controle.lista_leiloes_correntes[indice].participantes)) + '\n' \
+               + 'Número de lances já efetuados: ' + str(controle.lista_leiloes_correntes[indice].conta_lances)
+    release_leitor(controle.lista_leiloes_correntes[indice].identificador)
+    canal_envio.sendall(mensagem)
 
-def envio(destinatario,mensagem): # Função para envio de mensagem com repetição em caso de erro na transmisssão
-    while(1):
-        try:
-            destinatario.sendall(mensagem)
-            resp=destinatario.recv(1024)
-            if resp=='not_ok,err_pct':
-                raise
-            else:
-                break
 
-        except:
-            pass
-
-def recebimento(canal):  # Função para recepção de mensagens com repetição em cas de erro da transmissão
-    flag=0
-    while (1):
-        resp=canal.recv(1024)
-        try:
-            #aqui entra tratamento de erro de pacote, que caso ocorra gera flag=1
-            if flag == 1:
-                canal.sendall('not_ok,err_pct')
-                raise
-            else:
-                return resp
-        except:
-            pass
-
-#def envia_listagem():
 
 def teste_de_data(dia,mes,ano,hora,minuto,segundo,flag): # função pra testar se a hora e data do leilão é no futuro
 
@@ -361,7 +368,7 @@ def listar_leiloes(valor):
             i.segundo) + '\nO tempo máximo entre lances é de: ' + str(i.t_max) + ' segundos' + \
             '\nO leilao pertence a: ' + str(i.dono) + '\n')
     lista = lista1+lista2
-    conn.sendall(lista)
+    return lista
 
 def cria_arquivos_leilao():
     try:
@@ -444,7 +451,7 @@ def servidor(conn,addr):
                 break  # sai do 'Faz_login' loop mas continua no loop princpal
         elif a[0] == 'Lista_leiloes':
             print 'Listando leilões para anônimo\n'
-            listar_leiloes(0)
+            conn.sendall(listar_leiloes(0))
 
 
 
@@ -512,7 +519,7 @@ def servidor(conn,addr):
 
             elif b[0] == 'Lista_leiloes':
                 print 'Listando leilões para usuário\n'
-                listar_leiloes(1)
+                conn.sendall(listar_leiloes(1))
 
 
             elif b[0] == 'Apaga_usuario':
@@ -566,6 +573,80 @@ def servidor(conn,addr):
                 print 'Cliente resolveu sair'
                 conn.sendall('ok')
 
+
+#READER
+
+
+
+
+
+
+#<ENTRY Section>
+def acquire_leitor(identificador):
+    readcount = 'readcount_lc' + str(identificador)
+
+    rmutex = 'rmutex_lc' + str(identificador)
+    resource = 'resource_lc' + str(identificador)
+    readTry = 'readTry_lc' + str(identificador)
+
+    globals()[readTry].acquire()# Indica que o leitor que ler
+    globals()[rmutex].acquire()#Bloqueia seção para evitar inconsistência nas variáveis de controle
+    globals()[readcount] +=1#incrementa o contador de leitores
+    if globals()[readcount] == 1:#Checa se vc é o primeiro leitor
+        globals()[resource].acquire() #se primeiro leitor, bloqueia escritores
+    globals()[rmutex].release()#release entry section for other readers
+    globals()[readTry].release()#indicate you are done trying to access the resource
+
+def release_leitor(identificador):
+
+    readcount = 'readcount_lc' + str(identificador)
+
+    rmutex = 'rmutex_lc' + str(identificador)
+    resource = 'resource_lc' + str(identificador)
+
+    #<EXIT Section>
+    globals()[rmutex].acquire()#reserve exit section - avoids race condition with readers
+    globals()[readcount]-=1#indicate you're leaving
+    if globals()[readcount] == 0:#checks if you are last reader leaving
+        globals()[resource].release()#if last, you must release the locked resource
+    globals()[rmutex].release()#release exit section for other readers
+
+#//WRITER
+#<ENTRY Section>
+
+def acquire_escritor(identificador):
+    writecount = 'writercount_lc' + str(identificador)
+
+    rmutex = 'rmutex_lc' + str(identificador)
+    resource = 'resource_lc' + str(identificador)
+    readTry = 'readTry_lc' + str(identificador)
+
+    globals()[rmutex].acquire() #//reserve entry section for writers - avoids race conditions
+    globals()[writecount]+=1 #//report yourself as a writer entering
+    if writecount == 1:#//checks if you're first writer
+        globals()[readTry].acquire() #//if you're first, then you must lock the readers out. Prevent them from trying to enter CS
+    globals()[rmutex].release() #//release entry section
+
+    #<CRITICAL Section>
+    globals()[resource].acquire() #//reserve the resource for yourself - prevents other writers from simultaneously editing the shared resource
+
+
+
+def release_escritor(identificador):
+    writecount = 'writercount_lc' + str(identificador)
+
+    wmutex = 'wmutex_lc' + str(identificador)
+    resource = 'resource_lc' + str(identificador)
+    readTry = 'readTry_lc' + str(identificador)
+
+    globals()[resource].release() #//release file
+
+    #<EXIT Section>
+    globals()[wmutex].acquire() #//reserve exit section
+    globals()[writecount]-= 1 #//indicate you're leaving
+    if globals()[writecount] == 0: #//checks if you're the last writer
+        globals()[readTry].release() #//if you're last writer, you must unlock the readers. Allows them to try enter CS for reading
+    globals()[wmutex].release()#//release exit section
 
 if __name__ == '__main__':  ###Programa principal
 
