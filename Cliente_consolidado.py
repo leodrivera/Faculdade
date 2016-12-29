@@ -3,7 +3,7 @@
 
 
 
-import socket, os, time
+import socket, os, time, threading
 
 #Rotina para testar se o valor é válido ##
 # Sintaxe: testa_entrada("variável de input","comprimento mínimo +1 da variável digitada","Variável para teste de número","comprimento máximo")
@@ -24,6 +24,14 @@ def testa_entrada(valor,l,num=0,max=100):
         except Exception, err:
             valor=raw_input('Valor inválido, digite novamente\n')	#Exceção pelo valor abaixo do mínimo determinado
     return valor #retorna valor válido
+
+def ouvinte_de_lances(canal):
+	resp = canal.recv(1024)
+	print resp
+	while 1:
+		resp = canal.recv(1024)
+		a=resp.split(',')
+
 
 if __name__ == '__main__':  ###Programa principal
 	"""
@@ -77,6 +85,7 @@ if __name__ == '__main__':  ###Programa principal
 				if re == 'ok':
 					print('Usuário cadastrado com sucesso.\n')
 					estado=1 # Alteração para switch2 (logado)
+					num_leiloes = 0
 					break
 				else:
 					print('Nome de usuário já utilizado\n')
@@ -90,6 +99,7 @@ if __name__ == '__main__':  ###Programa principal
 				if rec == 'ok': #Se a resposta for ok
 					print('\nUsuário logado com sucesso\n')
 					estado = 1  # Alteração para switch2 (logado)
+					num_leiloes=0
 					break
 				else:
 					print('Usuário não cadatrado ou dados incorretos\n')
@@ -175,26 +185,48 @@ if __name__ == '__main__':  ###Programa principal
 				resp = soc.recv(1024)
 				if resp == 'ok':
 					print '\nUsuário deslogado com sucesso\n'
+					num_leiloes=0
 					estado = 0
 				else:
 					print '\nErro ao deslogar usuário, tente novamente mais tarde\n'
 
-			elif c==4:
+			elif c=='4':
 				d=raw_input('Digite o índice do leilão:\n')
 				soc.sendall('Entrar_leilao,'+d)
 
+				resp=soc.recv(1024)
 
-				PORT1 = PORT + int(float(d)) # The same port as used by the server
-				soc_temp='conexao'+d
-				globals()[soc_temp] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket
-				globals()[soc_temp].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)  # forçar que o socket desaloque a porta quando fechar o código
+				if resp=='ok':
+					PORT1 = PORT + int(float(d)) # The same port as used by the server
+					soc_temp='conexao'+d
+					globals()[soc_temp] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket
+					globals()[soc_temp].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)  # forçar que o socket desaloque a porta quando fechar o código
+					while 1:  # loop para o cliente não travar caso o servidor não tenha sido aberto
+						try:
+							globals()[soc_temp].connect((HOST, PORT1))  # Abre uma conexão com IP e porta especificados
+							break
+						except:
+							time.sleep(1)
+
+					escuta = threading.Thread(target=ouvinte_de_lances, args=(globals()[soc_temp],))
+					escuta.start()
+					flag=1
+					num_leiloes=num_leiloes+1
+
+
+				else:
+					print 'Índice de leilão inválido'
 
 			elif c==5:
 				if flag==0:
 					print 'Opção inválida, cliente não está participando de nenhum leilão'
 
 				else:
-					e=raw_input(digite)
+					indice_mensagem=raw_input('Digite o índice do leilão correspondente')
+					lance_mensagem=raw_input('Digite o valor em reais do lance desejado')
+					soc.sendall('Enviar lance'+indice_mensagem+','+lance_mensagem)
+					resp=soc.recv(1024)
+
 
 
 
