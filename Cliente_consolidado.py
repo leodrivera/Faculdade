@@ -25,13 +25,11 @@ def testa_entrada(valor,l,num=0,max=100):
             valor=raw_input('Valor inválido, digite novamente\n')	#Exceção pelo valor abaixo do mínimo determinado
     return valor #retorna valor válido
 
+
 def ouvinte_de_lances(canal):
-	resp = canal.recv(1024)
-	print resp
 	while 1:
 		resp = canal.recv(1024)
-		a=resp.split(',')
-
+		print resp
 
 if __name__ == '__main__':  ###Programa principal
 	"""
@@ -105,7 +103,7 @@ if __name__ == '__main__':  ###Programa principal
 					print('Usuário não cadatrado ou dados incorretos\n')
 		elif c=='2':
 			soc.sendall('Lista_leiloes')
-			resp=soc.recv(1024)
+			resp=soc.recv(4096)
 			print resp
 			#print 'Lista de leilões futuros'
 		while estado==1:
@@ -167,7 +165,7 @@ if __name__ == '__main__':  ###Programa principal
 						print "Ocorreu algum erro. Tente novamente\n"
 			elif c == '0':
 				soc.sendall('Lista_leiloes')
-				resp = soc.recv(1024)
+				resp = soc.recv(4096)
 				print resp
 					# print 'Lista de leilões futuros'
 			elif c=='2':
