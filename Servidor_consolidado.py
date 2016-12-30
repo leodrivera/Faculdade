@@ -191,17 +191,23 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
 def iniciador_de_leiloes(): # Rotina que monitora o início dos leilões
     global controle
     while (1):
-
-        temp = datetime.datetime.now() # aquisição da hora atual e transformação em segundos
+        # Mudança para estrutura mais simples
+        """
+        temp = datetime.datetime.now()
         agora = str(temp.day) + '/' + str(temp.month) + '/' + str(temp.year) + ' ' + str(temp.hour) + ':' + str(
             temp.minute) + ':' + str(temp.second)
         agora = datetime.datetime.strptime(agora, "%d/%m/%Y %H:%M:%S")
         agora = time.mktime(agora.timetuple())
+        """
+        agora = time.time() # aquisição da hora atual em segundos
 
+        #Percorre a lista controle.inicios_de_leilao de 2 em 2 segundos verificando se algum leilão está a menos
+        # que 30 minutos para seu início
         for i in controle.inicios_de_leilao:
-            if int(float(i[1])) < agora+30*60: # inicia 30 minutos antes de o leilão poder receber lances
-
-                cont=0
+            # Se faltar menos que 30 minutos para o início do leilão, ele entra no if
+            if int(float(i[1])) < agora+30*60:
+                cont=0 #Variável para contar a posição dentro da lista
+                #Verifica qual o leilão correspondente e armazena em temp2
                 for ind in controle.lista_leiloes_futuros:
                     if ind.identificador==i[0]:
                         temp2=ind
@@ -227,15 +233,15 @@ def iniciador_de_leiloes(): # Rotina que monitora o início dos leilões
                 prote = 'sem_lp' + str(temp2.identificador)
                 globals()[prote]=threading.BoundedSemaphore()
 
-
                 indice=len(controle.lista_leiloes_correntes)
-                controle.lista_leiloes_correntes.append(controle.lista_leiloes_futuros.pop(cont)) #Troca lista de armazenamento
-                                                                                                  #do leilão
+                controle.lista_leiloes_correntes.append(controle.lista_leiloes_futuros.pop(cont))
+                #Troca lista de armazenamento do leilão, passando a usar leiloes_correntes
 
                 #chama thread mata leilão
                 matador=threading.Thread(target=mata_leilao, args=(indice,))
                 matador.start()
 
+                # chama thread escutador
                 escutador = threading.Thread(target=escuta_participantes, args=(indice,))
                 escutador.start()
 
@@ -243,19 +249,22 @@ def iniciador_de_leiloes(): # Rotina que monitora o início dos leilões
 
         time.sleep(2)
 
-def mata_leilao(indice): # Thread que veirifica se cada leilão teve lances no período nescessário para ser finalizado
-    global controle      # quando não houve finaliza-se o leilão, quando houve calcul-se o tempo até a próxima verificação
+def mata_leilao(indice): # Thread que verifica se cada leilão teve lances no período nescessário para ser finalizado
+    global controle      # Se não houver, finaliza-se o leilão. Caso haja, calcula-se o tempo até a próxima verificação
     temax=controle.lista_leiloes_correntes[indice].t_max
 
     while 1:
-        temp = datetime.datetime.now()  # aquisição da hora atual e transformação em segundos
-        agora = str(temp.day) + '/' + str(temp.month) + '/' + str(temp.year) + ' ' + str(temp.hour)\
-                + ':' + str(temp.minute) + ':' + str(temp.second)
+        # Mudança para estrutura mais simples
+        """
+        temp = datetime.datetime.now()
+        agora = str(temp.day) + '/' + str(temp.month) + '/' + str(temp.year) + ' ' + str(temp.hour) + ':' + str(
+            temp.minute) + ':' + str(temp.second)
         agora = datetime.datetime.strptime(agora, "%d/%m/%Y %H:%M:%S")
         agora = time.mktime(agora.timetuple())
+        """
+        agora = time.time() # aquisição da hora atual em segundos
 
         soneca=float(controle.lista_leiloes_correntes[indice].hora_ultimo_lance) - float(agora) + float(temax)
-
         antigo_lance=controle.lista_leiloes_correntes[indice].lance_corrente
         time.sleep(soneca)
         if controle.lista_leiloes_correntes[indice].lance_corrente==antigo_lance:
@@ -264,11 +273,12 @@ def mata_leilao(indice): # Thread que veirifica se cada leilão teve lances no p
             time.sleep(5)
 
 def escuta_participantes(indice):
+    #Socket criado para cada leilão, onde a porta é calculada somando-se a porta padrão, 50000, com o identificador do leilão
+    #Usado para receber os participantes e estabelecer, através de novos threads, as comunicações síncronas e assíncronas
+
     global controle
-
-
-    HOST1 = ''  # Symbolic name meaning all available interfaces
-    PORT1 = 50000 + int(float(controle.lista_leiloes_correntes[indice].identificador))  # Arbitrary non-privileged port
+    HOST1 = ''  # Link simbólico representando todas as interfaces disponíveis
+    PORT1 = 50000 + int(float(controle.lista_leiloes_correntes[indice].identificador))  # Porta
     com2 = 's' + str(controle.lista_leiloes_correntes[indice].identificador)
     globals()[com2] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket (TCP)
     globals()[com2].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)  # forçar que o socket desaloque a porta quando fechar o código
@@ -277,9 +287,12 @@ def escuta_participantes(indice):
     while 1:
         globals()[com2].listen(1)
         canal_envio, addr2 = globals()[com2].accept()
+
+        #Thread para a comunicação síncrona
         falador1 = threading.Thread(target=sincrono_lances, args=(canal_envio, indice))
         falador1.start()
 
+        #Thread para a comunicação asíncrona
         falador2 = threading.Thread(target=assincrono_lances, args=(canal_envio, indice))
         falador2.start()
 
@@ -294,6 +307,8 @@ def sincrono_lances(canal_envio,indice):
 
 
 def assincrono_lances(canal_envio, indice):
+    #Verifica o lance corrente. Se ele for diferente do antigo (ou seja, algum cliente tiver feito um lance), ele envia
+    #  a mensagem para os usuários informando que foi feito um novo lance
     acquire_leitor(controle.lista_leiloes_correntes[indice].identificador)
     antigo=controle.lista_leiloes_correntes[indice].lance_corrente
     release_leitor(controle.lista_leiloes_correntes[indice].identificador)
@@ -322,19 +337,20 @@ def mensagem(canal_envio,indice):
 
 def teste_de_data(dia,mes,ano,hora,minuto,segundo,flag): # função pra testar se a hora e data do leilão é no futuro
 
-
-
     hora_leilao = str(dia) + '/' + str(mes) + '/' + str(ano) + ' ' + str(hora) + ':' + str(minuto) \
                   + ':' + str(segundo)  # para verificação se data é no futuro
     hora_leilao = datetime.datetime.strptime(hora_leilao, "%d/%m/%Y %H:%M:%S")
     hora_leilao = time.mktime(hora_leilao.timetuple())
 
+    #Mudança para estrutura mais simples
+    """
     temp = datetime.datetime.now()
     agora = str(temp.day) + '/' + str(temp.month) + '/' + str(temp.year) + ' ' + str(temp.hour) + ':' + str(
         temp.minute) + ':' + str(temp.second)
     agora = datetime.datetime.strptime(agora, "%d/%m/%Y %H:%M:%S")
     agora = time.mktime(agora.timetuple())
-
+    """
+    agora = time.time()
 
     if flag != 0:
         agora = agora + 30*60
@@ -410,15 +426,9 @@ def servidor(conn,addr):
                 else:
                     nome = user(a[1],a[2],a[3],a[4],a[5],str(addr),len(controle.lista_usuario)+1) # crio objeto 'nome' da classe usuário
                     name = a[1] # armazenamento do nome do cliente logado para utilização na criação de leilão
-                    #logado.socket=conn
                     print "criei objeto da classe usuário"
-
-                    logado=controle.adc_usuario(nome) #adc usuário ao .txt
-                    controle.onlines.append(logado)
-
-                    #controle.add_socket(a[1], conn)
-
-                    #logado = controle.retorna_usuario(a[1])
+                    logado=controle.adc_usuario(nome) #adiciona usuário ao .txt e retorna o índice do usuário
+                    controle.onlines.append(logado) #Adiciona o usuário à lista dos usuários logados
                     print "Arquivei usuario"
                     conn.sendall('ok')
                     estado = 1 # # alteração do servidor para switch 2 ao fim do while(1) (logado)
@@ -480,7 +490,7 @@ def servidor(conn,addr):
                 for i in range(3,10):  # Transforma strings de saída da mensagem em floats
                     b[i] = int(float(b[i]))
 
-                # Verifica se a data e hora de início de leilão não expirarou
+                # Verifica se a data e hora de início de leilão não expiraram
 
                 if teste_de_data(b[4], b[5], b[6], b[7], b[8], b[9],0) == 1:
                     arquivo = open('numero_de_leiloes_cadastrados.txt', 'r')
@@ -490,24 +500,19 @@ def servidor(conn,addr):
                         print 'Número de leilões cadastrados absorvidos '+str(num_leiloes)+'\n'
                     arquivo.close()
                     num_leiloes=int(num_leiloes)+1
-
-
                     arquivo = open('numero_de_leiloes_cadastrados.txt','w')  # trocando
                     arquivo.write(str(num_leiloes))
-                    arquivo.close()  #
-
+                    arquivo.close()
                     leilaao = leilao( b[1], b[2], b[3], b[4],b[5],b[6],b[7],b[8],b[9],b[10],name)
                     leilaao.identificador=num_leiloes
                     controle.lista_leiloes_futuros.append(leilaao)
-                    #controle.lista_leiloes_correntes.append(leilaao)
                     leilaao.arquivar_leilao_futuro()
-                    #leilaao.arquivar_leilao_corrente()
                     hora_leilao = str(b[4]) + '/' + str(b[5]) + '/' + str(b[6]) + ' ' + str(b[7]) + ':' + str(b[8]) \
                                   + ':' + str(b[9])  # para verificação se data é no futuro
                     hora_leilao = datetime.datetime.strptime(hora_leilao, "%d/%m/%Y %H:%M:%S")
                     hora_leilao = time.mktime(hora_leilao.timetuple())
-
-                    controle.inicios_de_leilao.append([leilaao.identificador, hora_leilao])
+                    controle.inicios_de_leilao.append([leilaao.identificador, hora_leilao]) #Adiciona o identificador do leilão e
+                    #  a hora em que ele começa
                     print controle.inicios_de_leilao
                     conn.sendall('ok')
                     print 'Leilão criado com sucesso\n'
@@ -516,11 +521,9 @@ def servidor(conn,addr):
                     print '\nLeilão de ' + str(b[1]) + ' marcado para antes de agora.\n'
                     conn.sendall('not_ok')
 
-
             elif b[0] == 'Lista_leiloes':
                 print 'Listando leilões para usuário\n'
                 conn.sendall(listar_leiloes(1))
-
 
             elif b[0] == 'Apaga_usuario':
                 print 'Cliente resolveu apagar usuario'
@@ -573,85 +576,69 @@ def servidor(conn,addr):
                 print 'Cliente resolveu sair'
                 conn.sendall('ok')
 
+#Uso de semáforo para fazer o controle dos leitores-escritores, com prioridade para os escritores.
+#O identicador é relativo a cada leilão
 
-#READER
-
-
-
-
-
-
-#<ENTRY Section>
 def acquire_leitor(identificador):
     readcount = 'readcount_lc' + str(identificador)
-
     rmutex = 'rmutex_lc' + str(identificador)
     resource = 'resource_lc' + str(identificador)
     readTry = 'readTry_lc' + str(identificador)
 
-    globals()[readTry].acquire()# Indica que o leitor que ler
-    globals()[rmutex].acquire()#Bloqueia seção para evitar inconsistência nas variáveis de controle
-    globals()[readcount] +=1#incrementa o contador de leitores
-    if globals()[readcount] == 1:#Checa se vc é o primeiro leitor
-        globals()[resource].acquire() #se primeiro leitor, bloqueia escritores
-    globals()[rmutex].release()#release entry section for other readers
-    globals()[readTry].release()#indicate you are done trying to access the resource
+    globals()[readTry].acquire() # Indica que o leitor que ler
+    globals()[rmutex].acquire() # Bloqueia seção para evitar inconsistência nas variáveis de controle
+    globals()[readcount] +=1 # Incrementa o contador de leitores
+    if globals()[readcount] == 1: # Checa se você é o primeiro leitor
+        globals()[resource].acquire() # Se for o primeiro leitor, bloqueia escritores
+    globals()[rmutex].release() # Libera a seção de entrada para outros leitores
+    globals()[readTry].release() # Indica que você acabou de acessar o recurso
+
 
 def release_leitor(identificador):
-
     readcount = 'readcount_lc' + str(identificador)
-
     rmutex = 'rmutex_lc' + str(identificador)
     resource = 'resource_lc' + str(identificador)
 
-    #<EXIT Section>
-    globals()[rmutex].acquire()#reserve exit section - avoids race condition with readers
-    globals()[readcount]-=1#indicate you're leaving
-    if globals()[readcount] == 0:#checks if you are last reader leaving
-        globals()[resource].release()#if last, you must release the locked resource
-    globals()[rmutex].release()#release exit section for other readers
+    globals()[rmutex].acquire() #Reserva a seção de saída - evita condição de corrida com os leitores
+    globals()[readcount]-=1 #Indica que você está saindo
+    if globals()[readcount] == 0: #Checa se você é o último leitor saindo
+        globals()[resource].release() #Śe for o último, você deve liberar o recurso reservado
+    globals()[rmutex].release() #Libera a seção de saída para outro leitor
 
-#//WRITER
-#<ENTRY Section>
 
 def acquire_escritor(identificador):
     writecount = 'writercount_lc' + str(identificador)
-
     rmutex = 'rmutex_lc' + str(identificador)
     resource = 'resource_lc' + str(identificador)
     readTry = 'readTry_lc' + str(identificador)
 
-    globals()[rmutex].acquire() #//reserve entry section for writers - avoids race conditions
-    globals()[writecount]+=1 #//report yourself as a writer entering
-    if writecount == 1:#//checks if you're first writer
-        globals()[readTry].acquire() #//if you're first, then you must lock the readers out. Prevent them from trying to enter CS
-    globals()[rmutex].release() #//release entry section
-
-    #<CRITICAL Section>
-    globals()[resource].acquire() #//reserve the resource for yourself - prevents other writers from simultaneously editing the shared resource
-
+    globals()[rmutex].acquire() #Reserva a seção de entrada para os escritores - evita condição de corrida
+    globals()[writecount]+=1 #Reporta você como um escritor entrando
+    if writecount == 1: #Checa se você é o primeiro escritor
+        globals()[readTry].acquire() #Se você é o primeiro, então deve bloquear os leitores. Evita que eles entrem  na Seção Crítica
+    globals()[rmutex].release() #Libera a seção de entrada
+    globals()[resource].acquire() #Reserca o recurso para você mesmo. Evita que outros escritores editem o recurso compartilhado
+    # de modo simultâneo
 
 
 def release_escritor(identificador):
     writecount = 'writercount_lc' + str(identificador)
-
     wmutex = 'wmutex_lc' + str(identificador)
     resource = 'resource_lc' + str(identificador)
     readTry = 'readTry_lc' + str(identificador)
 
-    globals()[resource].release() #//release file
-
-    #<EXIT Section>
-    globals()[wmutex].acquire() #//reserve exit section
-    globals()[writecount]-= 1 #//indicate you're leaving
-    if globals()[writecount] == 0: #//checks if you're the last writer
-        globals()[readTry].release() #//if you're last writer, you must unlock the readers. Allows them to try enter CS for reading
-    globals()[wmutex].release()#//release exit section
+    globals()[resource].release() #Libera arquivo
+    globals()[wmutex].acquire() #Reserva a seção crítica
+    globals()[writecount]-= 1 #Indica que você está saindo
+    if globals()[writecount] == 0: #Checa se você é o último escritor
+        globals()[readTry].release() #Se for o último, então você deve liberar o acesso aos leitores.
+        # Permite que eles entrem na seção crítica
+    globals()[wmutex].release() #Libera a seção crítica
 
 if __name__ == '__main__':  ###Programa principal
 
-    HOST = ''                 # Symbolic name meaning all available interfaces
-    PORT = 50000              # Arbitrary non-privileged port
+    HOST = ''                 # Link simbólico representando todas as interfaces disponíveis
+    PORT = 50000              # Porta
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #IPv4,tipo de socket (TCP)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #forçar que o socket desaloque a porta quando fechar o código
     s.bind((HOST, PORT)) #liga o socket com IP e porta
@@ -661,10 +648,8 @@ if __name__ == '__main__':  ###Programa principal
     controle = controle_geral()  # carrega os usuarios que estavam no clientes.txt
     ini = threading.Thread(target=iniciador_de_leiloes, args=())
     ini.start()
-    #lock=threading.Lock()
-    #l = threading.Thread(target=listagem, args=(lock,))
     clientes=0
-    logado=None
+    #logado=None
     while 1:
         s.listen(1)
         conn, addr = s.accept()  # Aceita uma conexão

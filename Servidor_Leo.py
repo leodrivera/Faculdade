@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-
 import socket, os, threading
 
 #Classe onde ficam armazenadas as informações do usuário
