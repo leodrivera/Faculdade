@@ -165,7 +165,7 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
 
                 else :
                     #aviso de que algum leilão perdeu a data de inicio com servidor off line
-                    print '\nLeilão de '+str(c[0])+' teve momento de início perdido com servidor off-line\n'
+                    print '\nLeilão número '+str(c[0])+' teve momento de início perdido com servidor off-line\n'
             print self.inicios_de_leilao
         except IOError:
             pass
@@ -188,8 +188,9 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
             if i.nome == nome:
                 i.socket1=sock
 
-def iniciador_de_leiloes(): # Rotina que monitora o início dos leilões
+def inicializador_de_leiloes(): # Rotina que monitora o início dos leilões
     global controle
+
     while (1):
         # Mudança para estrutura mais simples
         """
@@ -320,16 +321,14 @@ def assincrono_lances(canal_envio, indice):
         if novo!=antigo:
             mensagem(canal_envio,indice)
 
-
-
 def mensagem(canal_envio,indice):
     acquire_leitor(controle.lista_leiloes_correntes[indice].identificador)
     mensagem = 'Leilão número ' + str(controle.lista_leiloes_correntes[indice].identificador) + '\n' \
                + 'Vencedor até o momento: ' + controle.lista_leiloes_correntes[indice].vencedor_corrente + '\n' \
-               + 'Lance vencedor até o momento: ' + str(controle.lista_leiloes_correntes[indice].lance_corrente) + '\n' \
+               + 'Lance vencedor até o momento: R$' + str(controle.lista_leiloes_correntes[indice].lance_corrente) + '\n' \
                + 'Número de usuários participantes: ' + str(
         len(controle.lista_leiloes_correntes[indice].participantes)) + '\n' \
-               + 'Número de lances já efetuados: ' + str(controle.lista_leiloes_correntes[indice].conta_lances)
+               + 'Número de lances já efetuados: ' + str(controle.lista_leiloes_correntes[indice].conta_lances) + '\n'
     release_leitor(controle.lista_leiloes_correntes[indice].identificador)
     canal_envio.sendall(mensagem)
 
@@ -446,7 +445,7 @@ def servidor(conn,addr):
 
                         logado = controle.retorna_usuario(a[1],addr)
                         print 'Usuário '+str(logado.nome)+' de índice '+str(logado.indice.strip())+' logado com ip e porta '+str(logado.socket1)+'\n'
-                        name = logado.nome # armazenamento do nome do cleinte logado para utilização na criação de leilão
+                        name = logado.nome # armazenamento do nome do cliente logado para utilização na criação de leilão
                         logado=logado.indice
                         controle.onlines.append(logado) #acréscimo do cliente a variável de controle dos usuários logados
 
@@ -518,7 +517,7 @@ def servidor(conn,addr):
                     print 'Leilão criado com sucesso\n'
                 else:
                     # aviso de que algum leilão perdeu a data de inicio com servidor off line
-                    print '\nLeilão de ' + str(b[1]) + ' marcado para antes de agora.\n'
+                    print '\nLeilão de número ' + str(b[1]) + ' marcado para antes de agora.\n'
                     conn.sendall('not_ok')
 
             elif b[0] == 'Lista_leiloes':
@@ -575,6 +574,24 @@ def servidor(conn,addr):
                             globals()[prote].release()
                 print 'Cliente resolveu sair'
                 conn.sendall('ok')
+
+            elif b[0] == 'Enviar lance':
+                indice = int(b[1])
+                print 'indice',indice
+                print 'Nome logado', name
+                print 'Valor recebido', b[2]
+                #Checar se o índice é válido dentre os leilões correntes. Se não for, enviar not_ok
+                acquire_escritor(indice)
+                print 'Nome logado',name
+                globals()[controle].lista_leiloes_correntes[indice].vencedor_corrente = name #nome do usuário logado
+                print 'Vencedor_corrente',globals()[controle].lista_leiloes_correntes[indice].vencedor_corrente
+                print 'Valor recebido',b[2]
+                globals()[controle].lista_leiloes_correntes[indice].lance_corrente = b[2] #Recebe o valor atualizado
+                print 'Valor_corrente', globals()[controle].lista_leiloes_correntes[indice].lance_corrente
+                release_escritor(indice)
+                conn.sendall('ok')
+
+
 
 #Uso de semáforo para fazer o controle dos leitores-escritores, com prioridade para os escritores.
 #O identicador é relativo a cada leilão
@@ -646,7 +663,7 @@ if __name__ == '__main__':  ###Programa principal
     print "---------Servidor funcionado---------"
     print "Esperando pelos clientes\n"
     controle = controle_geral()  # carrega os usuarios que estavam no clientes.txt
-    ini = threading.Thread(target=iniciador_de_leiloes, args=())
+    ini = threading.Thread(target=inicializador_de_leiloes, args=())
     ini.start()
     clientes=0
     #logado=None

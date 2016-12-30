@@ -8,28 +8,31 @@ import socket, os, time, threading
 #Rotina para testar se o valor é válido ##
 # Sintaxe: testa_entrada("variável de input","comprimento mínimo +1 da variável digitada","Variável para teste de número","comprimento máximo")
 def testa_entrada(valor,l,num=0,max=100):
-    while 1:
-        try:
-            if (num == 'numero'): #Para checar se o valor inserido é um número, caso seja necessário
-                valor = float(valor) #Transforma string em float. Se o valor for inteiro ou float, ele continua. Se for
-                                            #string, ele abre exceção.
-                if len(str(int(valor))) > max:#Se o valor digitado for maior que o tamanho máximo, ele executa uma exceção.
-                    raise                      #Caso contrário, ele transforma valor em um inteiro e sai do loop depois.
-                else:
-                    valor=int(valor)         #Eu transformo ele em um inteiro por causa das datas
-            if len(str(valor)) <= l:   # Para a comparação ser correta, preciso conveter o valor(que está em float)
-                raise                       # em str por causa do len
-            else:                           #Se o valor digitado for menor que o tamanho mínimo ele executa uma exceção
-                break	            #Quebra o loop
-        except Exception, err:
-            valor=raw_input('Valor inválido, digite novamente\n')	#Exceção pelo valor abaixo do mínimo determinado
-    return valor #retorna valor válido
+	while 1:
+		try:
+			if (num == 'numero'): #Para checar se o valor inserido é um número, caso seja necessário
+				valor = float(valor) #Transforma string em float. Se o valor for inteiro ou float, ele continua. Se for
+											#string, ele abre exceção.
+				if len(str(int(valor))) > max:#Se o valor digitado for maior que o tamanho máximo, ele executa uma exceção.
+					raise                      #Caso contrário, ele transforma valor em um inteiro e sai do loop depois.
+				else:
+					valor=int(valor)         #Eu transformo ele em um inteiro por causa das datas
+			if len(str(valor)) <= l:   # Para a comparação ser correta, preciso conveter o valor(que está em float)
+				raise                       # em str por causa do len
+			else:                           #Se o valor digitado for menor que o tamanho mínimo ele executa uma exceção
+				break	            #Quebra o loop
+		except Exception, err:
+			valor=raw_input('Valor inválido, digite novamente\n')	#Exceção pelo valor abaixo do mínimo determinado
+	return valor #retorna valor válido
 
 
 def ouvinte_de_lances(canal):
+	temp = 0
 	while 1:
 		resp = canal.recv(1024)
-		print resp
+		if resp != temp: # Se a mensagem for igual, ele ignora
+			print resp
+		temp = resp
 
 if __name__ == '__main__':  ###Programa principal
 	"""
@@ -50,6 +53,7 @@ if __name__ == '__main__':  ###Programa principal
 			time.sleep(1)
 
 	print "---------Você está conectado ao servidor---------\n"
+	num_leiloes=0
 	estado=0
 	while 1: # Switch1
 	# Loop fica rodando até o cliente digitar escolher uma opção do swtich1
@@ -115,7 +119,7 @@ if __name__ == '__main__':  ###Programa principal
 				print "Diga o que deseja fazer:"
 				c = raw_input(
 					'0 para listar leilões \n1 para Lançar um novo produto\n2 para apagar usuário\n3 para sair\n' + \
-					'4 para entrar em leilão\n5 para dar lance')
+					'4 para entrar em leilão\n5 para dar lance\n')
 			if c == '1': # Cliente escolhe lançar novo produto
 				print "---------Lançar Produto---------"
 				while 1:  #Laço do Lança_Produto
@@ -191,11 +195,9 @@ if __name__ == '__main__':  ###Programa principal
 			elif c=='4':
 				d=raw_input('Digite o índice do leilão:\n')
 				soc.sendall('Entrar_leilao,'+d)
-
 				resp=soc.recv(1024)
-
 				if resp=='ok':
-					PORT1 = PORT + int(float(d)) # The same port as used by the server
+					PORT1 = PORT + int(float(d)) # A mesma porta usada pelo servidor
 					soc_temp='conexao'+d
 					globals()[soc_temp] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket
 					globals()[soc_temp].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)  # forçar que o socket desaloque a porta quando fechar o código
@@ -205,26 +207,32 @@ if __name__ == '__main__':  ###Programa principal
 							break
 						except:
 							time.sleep(1)
-
+					print "Você está conectado ao leilão de número "+d
 					escuta = threading.Thread(target=ouvinte_de_lances, args=(globals()[soc_temp],))
 					escuta.start()
 					flag=1
 					num_leiloes=num_leiloes+1
+					time.sleep(2) #Para dar tempo de receber a resposta do leilão do servidor
 
 
 				else:
 					print 'Índice de leilão inválido'
 
-			elif c==5:
+			elif c=='5':
 				if flag==0:
 					print 'Opção inválida, cliente não está participando de nenhum leilão'
 
 				else:
-					indice_mensagem=raw_input('Digite o índice do leilão correspondente')
-					lance_mensagem=raw_input('Digite o valor em reais do lance desejado')
-					soc.sendall('Enviar lance'+indice_mensagem+','+lance_mensagem)
+					indice_mensagem=raw_input('Digite o índice do leilão correspondente\n')
+					indice_mensagem=testa_entrada(indice_mensagem, 0, 'numero')  # Rotina para testar se a entrada é um valor compatível
+					lance_mensagem=raw_input('Digite o valor em reais do lance desejado\n')
+					lance_mensagem=testa_entrada(lance_mensagem, 0, 'numero')  # Rotina para testar se a entrada é um valor compatível
+					soc.sendall('Enviar lance'+','+str(indice_mensagem)+','+str(lance_mensagem))
 					resp=soc.recv(1024)
-
+					if resp == 'ok':
+						print 'Lance efetuado com sucesso'
+					else:
+						print 'Ocorreu algum erro'
 
 
 
