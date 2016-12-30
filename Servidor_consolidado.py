@@ -582,7 +582,7 @@ def servidor(conn,addr):
                     if b[1] == str(i.identificador):
                         flaag=1
                         break
-                    indice = +1
+                    indice=+1
                 print 'indice', indice
                 
                 if flaag == 0:
@@ -590,7 +590,7 @@ def servidor(conn,addr):
                     conn.sendall('not_ok,1')
                 else:
                     acquire_leitor(controle.lista_leiloes_correntes[indice].identificador)
-                    if int(float(b[2])) <= float(controle.lista_leiloes_correntes[indice].lance_corrente):
+                    if float(b[2]) <= float(controle.lista_leiloes_correntes[indice].lance_corrente):
                         release_leitor(controle.lista_leiloes_correntes[indice].identificador)
                         #Se o valor do lance for menor que o lance corrente envia not_ok_2
                         conn.sendall('not_ok,2')
@@ -606,6 +606,7 @@ def servidor(conn,addr):
                         controle.lista_leiloes_correntes[indice].lance_corrente = float(b[2]) #Recebe o valor atualizado
                         print 'Valor_corrente', controle.lista_leiloes_correntes[indice].lance_corrente
                         release_escritor(controle.lista_leiloes_correntes[indice].identificador)
+
                         conn.sendall('ok')
 
 
@@ -621,7 +622,7 @@ def acquire_leitor(identificador):
 
     globals()[readTry].acquire() # Indica que o leitor que ler
     globals()[rmutex].acquire() # Bloqueia seção para evitar inconsistência nas variáveis de controle
-    globals()[readcount] +=1 # Incrementa o contador de leitores
+    globals()[readcount]+=1 # Incrementa o contador de leitores
     if globals()[readcount] == 1: # Checa se você é o primeiro leitor
         globals()[resource].acquire() # Se for o primeiro leitor, bloqueia escritores
     globals()[rmutex].release() # Libera a seção de entrada para outros leitores
@@ -648,7 +649,7 @@ def acquire_escritor(identificador):
 
     globals()[rmutex].acquire() #Reserva a seção de entrada para os escritores - evita condição de corrida
     globals()[writecount]+=1 #Reporta você como um escritor entrando
-    if writecount == 1: #Checa se você é o primeiro escritor
+    if globals()[writecount] == 1: #Checa se você é o primeiro escritor
         globals()[readTry].acquire() #Se você é o primeiro, então deve bloquear os leitores. Evita que eles entrem  na Seção Crítica
     globals()[rmutex].release() #Libera a seção de entrada
     globals()[resource].acquire() #Reserca o recurso para você mesmo. Evita que outros escritores editem o recurso compartilhado
@@ -663,7 +664,7 @@ def release_escritor(identificador):
 
     globals()[resource].release() #Libera arquivo
     globals()[wmutex].acquire() #Reserva a seção crítica
-    globals()[writecount]-= 1 #Indica que você está saindo
+    globals()[writecount]-=1 #Indica que você está saindo
     if globals()[writecount] == 0: #Checa se você é o último escritor
         globals()[readTry].release() #Se for o último, então você deve liberar o acesso aos leitores.
         # Permite que eles entrem na seção crítica

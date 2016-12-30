@@ -230,11 +230,11 @@ if __name__ == '__main__':  ###Programa principal
 					soc.sendall('Enviar lance'+','+str(indice_mensagem)+','+str(lance_mensagem))
 					resp=soc.recv(1024)
 					if resp == 'ok':
-						print 'Lance efetuado com sucesso'
+						print 'Lance efetuado com sucesso\n'
 					elif resp == 'not_ok,1':
-						print 'Índice de leilão inválido'
+						print 'Índice de leilão inválido\n'
 					elif resp == 'not_ok,2':
-						print 'Valor menor que o lance corrente'
+						print 'Valor menor que o lance corrente\n'
 
 
 
