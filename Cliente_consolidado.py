@@ -231,9 +231,9 @@ if __name__ == '__main__':  ###Programa principal
 					resp=soc.recv(1024)
 					if resp == 'ok':
 						print 'Lance efetuado com sucesso'
-					elif resp == 'not_ok_1':
+					elif resp == 'not_ok,1':
 						print 'Índice de leilão inválido'
-					elif resp == 'not_ok_2':
+					elif resp == 'not_ok,2':
 						print 'Valor menor que o lance corrente'
 
 
