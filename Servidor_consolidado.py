@@ -576,19 +576,32 @@ def servidor(conn,addr):
                 conn.sendall('ok')
 
             elif b[0] == 'Enviar lance':
-                indice = int(b[1])
-                print 'indice',indice
-                print 'Nome logado', name
-                print 'Valor recebido', b[2]
-                #Checar se o índice é válido dentre os leilões correntes. Se não for, enviar not_ok
-                acquire_escritor(indice)
+                indice=0
+                flaag=0
+                for i in controle.lista_leiloes_correntes:
+                    if b[1] == str(i.identificador):
+                        flaag=1
+                        break
+                    indice = +1
+                print 'indice', indice
+                if flaag == 0:
+                    #Se o identicador enviado não é válido, envia not_ok_1
+                    conn.sendall('not_ok_1')
+                acquire_leitor(controle.lista_leiloes_correntes[indice].identificador)
+                if float(b[2]) < float(controle.lista_leiloes_correntes[indice].lance_corrente):
+                    #Se o valor do lance for menor que o lance corrente envia not_ok_2
+                    conn.sendall('not_ok_1')
+                release_leitor(controle.lista_leiloes_correntes[indice].identificador)
+
+                acquire_escritor(controle.lista_leiloes_correntes[indice].identificador)
                 print 'Nome logado',name
-                globals()[controle].lista_leiloes_correntes[indice].vencedor_corrente = name #nome do usuário logado
-                print 'Vencedor_corrente',globals()[controle].lista_leiloes_correntes[indice].vencedor_corrente
+                print 'Vencedor_corrente', controle.lista_leiloes_correntes[indice].vencedor_corrente
+                controle.lista_leiloes_correntes[indice].vencedor_corrente = name #nome do usuário logado
+                print 'Vencedor_corrente',controle.lista_leiloes_correntes[indice].vencedor_corrente
                 print 'Valor recebido',b[2]
-                globals()[controle].lista_leiloes_correntes[indice].lance_corrente = b[2] #Recebe o valor atualizado
-                print 'Valor_corrente', globals()[controle].lista_leiloes_correntes[indice].lance_corrente
-                release_escritor(indice)
+                controle.lista_leiloes_correntes[indice].lance_corrente = float(b[2]) #Recebe o valor atualizado
+                print 'Valor_corrente', controle.lista_leiloes_correntes[indice].lance_corrente
+                release_escritor(controle.lista_leiloes_correntes[indice].identificador)
                 conn.sendall('ok')
 
 
