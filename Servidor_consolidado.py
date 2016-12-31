@@ -12,6 +12,7 @@ class leilao: # Classe dos leilões
     vencedor_corrente=None
     conta_lances=0
     lance_vencedor=0
+    hora_leilao=0
     hora_ultimo_lance=0
     dia=0
     mes=0
@@ -24,6 +25,7 @@ class leilao: # Classe dos leilões
     dono=None
     data_venda=' '
     participantes=[]
+    flag_de_iniciado=0
 
     # Contrutor de novos leilões
     def __init__(self,nome, descricao,lance_minimo, dia, mes, ano, hora, minuto, segundo, t_max, dono):
@@ -37,7 +39,7 @@ class leilao: # Classe dos leilões
                       + ':' + str(segundo)  # para verificação se data é no futuro
         hora_leilao = datetime.datetime.strptime(hora_leilao, "%d/%m/%Y %H:%M:%S")
         hora_leilao = time.mktime(hora_leilao.timetuple())
-
+        self.hora_leilao=hora_leilao
         self.conta_lances=0
         self.hora_ultimo_lance=hora_leilao # protegida
         self.lance_vencedor=lance_minimo
@@ -51,6 +53,7 @@ class leilao: # Classe dos leilões
         self.dono=dono
         self.data_venda=' '
         self.participantes=[]
+        self.flag_de_iniciado=0
 
         # Método para salvar leilões nos arquivos txt
     def arquivar_leilao_futuro(self):
@@ -246,6 +249,10 @@ def inicializador_de_leiloes(): # Rotina que monitora o início dos leilões
                 escutador = threading.Thread(target=escuta_participantes, args=(indice,))
                 escutador.start()
 
+                # chama iniciador
+                iniciador = threading.Thread(target=inicio_para_lances, args=(indice,))
+                iniciador.start()
+
                 controle.inicios_de_leilao.remove(i) #remove leilão da estrutura de verificação de início
 
         time.sleep(2)
@@ -256,13 +263,7 @@ def mata_leilao(indice): # Thread que verifica se cada leilão teve lances no pe
 
     while 1:
         # Mudança para estrutura mais simples
-        """
-        temp = datetime.datetime.now()
-        agora = str(temp.day) + '/' + str(temp.month) + '/' + str(temp.year) + ' ' + str(temp.hour) + ':' + str(
-            temp.minute) + ':' + str(temp.second)
-        agora = datetime.datetime.strptime(agora, "%d/%m/%Y %H:%M:%S")
-        agora = time.mktime(agora.timetuple())
-        """
+
         agora = time.time() # aquisição da hora atual em segundos
 
         soneca=float(controle.lista_leiloes_correntes[indice].hora_ultimo_lance) - float(agora) + float(temax)
@@ -290,17 +291,17 @@ def escuta_participantes(indice):
         canal_envio, addr2 = globals()[com2].accept()
 
         #Thread para a comunicação síncrona
-        falador1 = threading.Thread(target=sincrono_lances, args=(canal_envio, indice))
+        falador1 = threading.Thread(target=sincrono_lances, args=(canal_envio, indice, controle.lista_leiloes_correntes[indice].identificador))
         falador1.start()
 
         #Thread para a comunicação asíncrona
         falador2 = threading.Thread(target=assincrono_lances, args=(canal_envio, indice))
         falador2.start()
 
-def sincrono_lances(canal_envio,indice):
+def sincrono_lances(canal_envio, indice, identificador):
     global controle
 
-    canal_envio.sendall('\nConexão estabelecida para relatórios de leilão\n')
+    canal_envio.sendall('\nConexão estabelecida para relatórios de leilão,\n'+str(identificador))
 
     while 1:
         time.sleep(1)
@@ -332,6 +333,22 @@ def mensagem(canal_envio,indice):
     release_leitor(controle.lista_leiloes_correntes[indice].identificador)
     canal_envio.sendall(mensagem)
 
+def inicio_para_lances(indice):
+    global controle  # Se não houver, finaliza-se o leilão. Caso haja, calcula-se o tempo até a próxima verificação
+
+
+    agora = time.time()  # aquisição da hora atual em segundos
+
+    acquire_leitor(controle.lista_leiloes_correntes[indice].identificador)
+    soneca = float(controle.lista_leiloes_correntes[indice].hora_leilao) - float(agora)
+    release_leitor(controle.lista_leiloes_correntes[indice].identificador)
+
+    time.sleep(soneca)
+
+    acquire_escritor(controle.lista_leiloes_correntes[indice].identificador)
+    controle.lista_leiloes_correntes[indice].flag_de_iniciado=1
+    release_escritor(controle.lista_leiloes_correntes[indice].identificador)
+    print 'leilão '+controle.lista_leiloes_correntes[indice].identificador+'aberto pra lances'
 
 
 def teste_de_data(dia,mes,ano,hora,minuto,segundo,flag): # função pra testar se a hora e data do leilão é no futuro
@@ -402,13 +419,21 @@ def cria_arquivos_leilao():
         f.write('0')
         f.close()
 
+    try:
+        f = open('numero_de_clientes_cadastrados.txt')  # Abre o arquivo numero_de_leiloes_cadastrados.txt. Se não tiver, ele acusa erro e cria um
+        f.close()
+
+    except IOError:
+        f = open('numero_de_clientes_cadastrados.txt','w')
+        f.write('0')
+        f.close()
+
 #Servidor Thread
 def servidor(conn,addr):
     print 'Conectado por', addr, "\n"
     global controle
     name = ' '
     estado=0 # Indicador de que existe algúem logado
-    cria_arquivos_leilao()
     while 1: # Responsável pelas opções do "switch1"
         resp = conn.recv(1024)  # Cliente dizendo se quer cadastrar ou fazer login, com seus respectivos parâmetros
         if not resp: break #Sai do loop caso valor seja nulo ou 0
@@ -423,7 +448,17 @@ def servidor(conn,addr):
                     conn.sendall('not_ok')
                     print
                 else:
-                    nome = user(a[1],a[2],a[3],a[4],a[5],str(addr),len(controle.lista_usuario)+1) # crio objeto 'nome' da classe usuário
+                    arquivo2 = open('numero_de_clientes_cadastrados.txt', 'r')
+                    num_clientes = 0
+                    for lin in arquivo2:
+                        num_clientes = lin
+                        #print 'Número de leilões cadastrados absorvidos ' + str(num_clientes) + '\n'
+                    arquivo2.close()
+                    num_clientes=int(float(num_clientes))+1
+                    arquivo2 = open('numero_de_clientes_cadastrados.txt', 'w')  # trocando
+                    arquivo2.write(str(num_clientes))
+                    arquivo2.close()
+                    nome = user(a[1],a[2],a[3],a[4],a[5],str(addr),num_clientes) # crio objeto 'nome' da classe usuário
                     name = a[1] # armazenamento do nome do cliente logado para utilização na criação de leilão
                     print "criei objeto da classe usuário"
                     logado=controle.adc_usuario(nome) #adiciona usuário ao .txt e retorna o índice do usuário
@@ -496,7 +531,7 @@ def servidor(conn,addr):
                     num_leiloes = 0
                     for lin in arquivo:
                         num_leiloes=lin
-                        print 'Número de leilões cadastrados absorvidos '+str(num_leiloes)+'\n'
+                        #print 'Número de leilões cadastrados absorvidos '+str(num_leiloes)+'\n'
                     arquivo.close()
                     num_leiloes=int(num_leiloes)+1
                     arquivo = open('numero_de_leiloes_cadastrados.txt','w')  # trocando
@@ -590,11 +625,16 @@ def servidor(conn,addr):
                     conn.sendall('not_ok,1')
                 else:
                     acquire_leitor(controle.lista_leiloes_correntes[indice].identificador)
-                    if float(b[2]) <= float(controle.lista_leiloes_correntes[indice].lance_corrente):
+                    if controle.lista_leiloes_correntes[indice].flag_de_iniciado==0:
+                        release_leitor(controle.lista_leiloes_correntes[indice].identificador)
+                        # Se o leilão ainda não tiver começado
+                        conn.sendall('not_ok,3')
+                    elif float(b[2]) <= float(controle.lista_leiloes_correntes[indice].lance_corrente):
                         release_leitor(controle.lista_leiloes_correntes[indice].identificador)
                         #Se o valor do lance for menor que o lance corrente envia not_ok_2
                         conn.sendall('not_ok,2')
                     else:
+                        # se está tudo ok
                         release_leitor(controle.lista_leiloes_correntes[indice].identificador)
 
                         acquire_escritor(controle.lista_leiloes_correntes[indice].identificador)
@@ -605,6 +645,7 @@ def servidor(conn,addr):
                         print 'Valor recebido',b[2]
                         controle.lista_leiloes_correntes[indice].lance_corrente = float(b[2]) #Recebe o valor atualizado
                         print 'Valor_corrente', controle.lista_leiloes_correntes[indice].lance_corrente
+                        controle.lista_leiloes_correntes[indice].conta_lances+=1
                         release_escritor(controle.lista_leiloes_correntes[indice].identificador)
 
                         conn.sendall('ok')
@@ -681,6 +722,7 @@ if __name__ == '__main__':  ###Programa principal
     print "---------Servidor funcionado---------"
     print "Esperando pelos clientes\n"
     controle = controle_geral()  # carrega os usuarios que estavam no clientes.txt
+    cria_arquivos_leilao()
     ini = threading.Thread(target=inicializador_de_leiloes, args=())
     ini.start()
     clientes=0
