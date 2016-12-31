@@ -27,10 +27,17 @@ def testa_entrada(valor,l,num=0,max=100):
 
 
 def ouvinte_de_lances(canal):
+	global lista_leiloes_logados
 	temp = 0
+	resp = canal.recv(1024)
+	m=resp.split(',')
+	lista_leiloes_logados.append(int(float(m[1])))
+	time.sleep(0.1)
+
 	while 1:
 		resp = canal.recv(1024)
 		if resp != temp: # Se a mensagem for igual, ele ignora
+			time.sleep(0.1)
 			print resp
 		temp = resp
 
@@ -55,6 +62,7 @@ if __name__ == '__main__':  ###Programa principal
 	print "---------Você está conectado ao servidor---------\n"
 	num_leiloes=0
 	estado=0
+	lista_leiloes_logados=[]
 	while 1: # Switch1
 	# Loop fica rodando até o cliente digitar escolher uma opção do swtich1
 	# Mensagem para o cliente digitar o que ele deseja fazer
@@ -119,7 +127,7 @@ if __name__ == '__main__':  ###Programa principal
 				print "Diga o que deseja fazer:"
 				c = raw_input(
 					'0 para listar leilões \n1 para Lançar um novo produto\n2 para apagar usuário\n3 para sair\n' + \
-					'4 para entrar em leilão\n5 para dar lance\n')
+					'4 para entrar em leilão\n5 para dar lance\n\n')
 			if c == '1': # Cliente escolhe lançar novo produto
 				print "---------Lançar Produto---------"
 				while 1:  #Laço do Lança_Produto
@@ -187,6 +195,7 @@ if __name__ == '__main__':  ###Programa principal
 				resp = soc.recv(1024)
 				if resp == 'ok':
 					print '\nUsuário deslogado com sucesso\n'
+					lista_leiloes_logados=[]
 					num_leiloes=0
 					estado = 0
 				else:
@@ -220,22 +229,30 @@ if __name__ == '__main__':  ###Programa principal
 
 			elif c=='5':
 				if flag==0:
-					print 'Opção inválida, cliente não está participando de nenhum leilão'
+					print '\nOpção inválida, cliente não está participando de nenhum leilão\n'
 
 				else:
 					indice_mensagem=raw_input('Digite o índice do leilão correspondente\n')
 					indice_mensagem=testa_entrada(indice_mensagem, 0, 'numero')  # Rotina para testar se a entrada é um valor compatível
 					lance_mensagem=raw_input('Digite o valor em reais do lance desejado\n')
 					lance_mensagem=testa_entrada(lance_mensagem, 0, 'numero')  # Rotina para testar se a entrada é um valor compatível
-					soc.sendall('Enviar lance'+','+str(indice_mensagem)+','+str(lance_mensagem))
-					resp=soc.recv(1024)
-					if resp == 'ok':
-						print 'Lance efetuado com sucesso\n'
-					elif resp == 'not_ok,1':
-						print 'Índice de leilão inválido\n'
-					elif resp == 'not_ok,2':
-						print 'Valor menor que o lance corrente\n'
-
+					flag2=0
+					for i in lista_leiloes_logados:
+						if i==indice_mensagem:
+							soc.sendall('Enviar lance'+','+str(indice_mensagem)+','+str(lance_mensagem),i)
+							resp=soc.recv(1024)
+							if resp == 'ok':
+								print 'Lance efetuado com sucesso\n'
+							elif resp == 'not_ok,1':
+								print 'Índice de leilão inválido\n'
+							elif resp == 'not_ok,2':
+								print 'Valor menor que o lance corrente\n'
+							elif resp == 'not_ok,3':
+								print 'Leilão ainda não iniciado\n'
+							flag2=1
+							break
+					if flag2==0:
+						print '\nOpção inválida, cliente não está participando de nenhum leilão com este índice\n'
 
 
 
