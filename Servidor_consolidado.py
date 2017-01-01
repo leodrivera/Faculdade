@@ -317,9 +317,17 @@ def sincrono_lances(canal_envio, indice, identificador):
 
     canal_envio.sendall('\nConexão estabelecida para relatórios de leilão,\n'+str(identificador))
 
+
     while 1:
-        time.sleep(1)
-        mensagem(canal_envio, indice, identificador)
+        acquire_leitor(identificador)
+        if controle.lista_leiloes_correntes[indice].flag_de_iniciado == 0:
+            release_leitor(identificador)
+            time.sleep(1)
+            pass
+        else:
+            release_leitor(identificador)
+            mensagem(canal_envio, indice, identificador)
+            time.sleep(1)
 
 
 def assincrono_lances(canal_envio, indice, identificador):
@@ -331,18 +339,26 @@ def assincrono_lances(canal_envio, indice, identificador):
     while 1:
         time.sleep(0.2)
         acquire_leitor(identificador)
-        novo = controle.lista_leiloes_correntes[indice].lance_corrente
-        release_leitor(identificador)
-        if novo!=antigo:
-            mensagem(canal_envio, indice, identificador)
+        if controle.lista_leiloes_correntes[indice].flag_de_iniciado == 0:
+            release_leitor(identificador)
+            time.sleep(1)
+            pass
+        else:
+            novo = controle.lista_leiloes_correntes[indice].lance_corrente
+            release_leitor(identificador)
+            if novo!=antigo:
+                mensagem(canal_envio, indice, identificador)
 
 def mensagem(canal_envio, indice, identificador):
     acquire_leitor(identificador)
+    cont=0
+    for i in controle.lista_leiloes_correntes[indice].participantes:
+        if i[1]==0:
+            cont+=1
     mensagem = 'Leilão número ' + str(identificador) + '\n' \
                + 'Vencedor até o momento: ' + controle.lista_leiloes_correntes[indice].vencedor_corrente + '\n' \
                + 'Lance vencedor até o momento: R$' + str(controle.lista_leiloes_correntes[indice].lance_corrente) + '\n' \
-               + 'Número de usuários participantes: ' + str(
-        len(controle.lista_leiloes_correntes[indice].participantes)) + '\n' \
+               + 'Número de usuários participantes: ' + str(cont) + '\n' \
                + 'Número de lances já efetuados: ' + str(controle.lista_leiloes_correntes[indice].conta_lances) + '\n'
     release_leitor(identificador)
     canal_envio.sendall(mensagem)
@@ -604,6 +620,7 @@ def servidor(conn,addr):
                         prote='sem_lp'+str(i.identificador)
                         globals()[prote].acquire()
                         i.participantes.append([int(float(logado)), 0])
+                        conn.sendall(str(len(i.participantes)-1))
                         print i.participantes
                         globals()[prote].release()
                         break
@@ -616,10 +633,10 @@ def servidor(conn,addr):
                 estado=0
                 for i in controle.lista_leiloes_correntes:
                     for ii in i.participantes:
-                        if ii[1]==int(float(logado)):
+                        if ii[0]==int(float(logado)):
                             prote = 'sem_lp' + str(i.identificador)
                             globals()[prote].acquire()
-                            i.remov(ii)
+                            ii[1]=1
                             globals()[prote].release()
                 print 'Cliente resolveu sair'
                 conn.sendall('ok')

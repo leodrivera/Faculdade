@@ -220,6 +220,9 @@ if __name__ == '__main__':  ###Programa principal
 					print "Você está conectado ao leilão de número "+d+'\n'
 					escuta = threading.Thread(target=ouvinte_de_lances, args=(globals()[soc_temp],))
 					escuta.start()
+					logado=int(float(soc.recv(1024))) #variável que guarda posiçaõ do cliente na lista de participantes do leilão específico
+					                                # ainda vai ser convertida pra global pra ser usada
+					print logado
 					flag=1
 					num_leiloes=num_leiloes+1
 					time.sleep(2) #Para dar tempo de receber a resposta do leilão do servidor
