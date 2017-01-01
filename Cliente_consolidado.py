@@ -124,6 +124,7 @@ if __name__ == '__main__':  ###Programa principal
 				c=raw_input('0 para listar leilões \n1 para Lançar um novo produto\n2 para apagar usuário\n3 para sair\n'+\
 							'4 para entrar em leilão\n')
 			else:
+				time.sleep(0.2)
 				print "Diga o que deseja fazer:"
 				c = raw_input(
 					'0 para listar leilões \n1 para Lançar um novo produto\n2 para apagar usuário\n3 para sair\n' + \
@@ -216,9 +217,12 @@ if __name__ == '__main__':  ###Programa principal
 							break
 						except:
 							time.sleep(1)
-					print "Você está conectado ao leilão de número "+d
+					print "Você está conectado ao leilão de número "+d+'\n'
 					escuta = threading.Thread(target=ouvinte_de_lances, args=(globals()[soc_temp],))
 					escuta.start()
+					logado=int(float(soc.recv(1024))) #variável que guarda posiçaõ do cliente na lista de participantes do leilão específico
+					                                # ainda vai ser convertida pra global pra ser usada
+					print logado
 					flag=1
 					num_leiloes=num_leiloes+1
 					time.sleep(2) #Para dar tempo de receber a resposta do leilão do servidor
@@ -239,16 +243,16 @@ if __name__ == '__main__':  ###Programa principal
 					flag2=0
 					for i in lista_leiloes_logados:
 						if i==indice_mensagem:
-							soc.sendall('Enviar lance'+','+str(indice_mensagem)+','+str(lance_mensagem),i)
+							soc.sendall('Enviar lance'+','+str(indice_mensagem)+','+str(lance_mensagem))
 							resp=soc.recv(1024)
 							if resp == 'ok':
-								print 'Lance efetuado com sucesso\n'
+								print '\nLance efetuado com sucesso\n'
 							elif resp == 'not_ok,1':
-								print 'Índice de leilão inválido\n'
+								print '\nÍndice de leilão inválido\n'
 							elif resp == 'not_ok,2':
-								print 'Valor menor que o lance corrente\n'
+								print '\nValor menor ou igual ao lance corrente\n'
 							elif resp == 'not_ok,3':
-								print 'Leilão ainda não iniciado\n'
+								print '\nLeilão ainda não iniciado\n'
 							flag2=1
 							break
 					if flag2==0:
