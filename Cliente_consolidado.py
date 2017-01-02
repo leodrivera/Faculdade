@@ -28,24 +28,39 @@ def testa_entrada(valor,l,num=0,max=100):
 
 def ouvinte_de_lances(canal, posicao_no_leilao):
 	global lista_leiloes_logados
+	global nome
 	temp = 0
 	resp = canal.recv(1024)
 	m=resp.split(',')
-	lista_leiloes_logados.append([int(float(m[1])), posicao_no_leilao])
+	lista_leiloes_logados.append([int(float(m[1])), posicao_no_leilao, 0]) #salva na lista de leilões que o cliente participa
+																		 #o ídentificador do leilão e a posição do cliente neste leilão
+																		# e o flag de participação
 
 
 	time.sleep(0.1)
 
 	while 1:
 		resp = canal.recv(1024)
-		if resp != 'Morraaaa':
-			if resp != temp: # Se a mensagem for igual, ele ignora (mandar tmb versão sem isso)
+		resp=resp.split(',')
+		if resp[0] == 'Lance':
+			if resp[0] != temp: # Se a mensagem for igual, ele ignora (mandar tmb versão sem isso)
 				time.sleep(0.1)
+				temp = resp
+
+				#aqui vai a função de printar completa
 				print resp
-			temp = resp
-		else:
-			print 'escutador morreu'
+		elif resp[0]== 'Fim_leilao':
+			print 'Leilão número',resp[1],'foi finalizado.\nVencedor:',resp[2],'\nValor de venda: R$',resp[3]
+			if resp[2]==nome:
+				resp = canal.recv(1024)
+				resp = resp.split(',')
+				print 'Parabéns!!\nVocê é o vencedor do leilão',resp[1],'cujo valor foi de R$',resp[2]
+				print '\nContatos do vendedor\n\nNome:',resp[3],'\nEndereço:',resp[4],'\nTelefone:',resp[5],'\nE-mail:',resp[6]
+
+		elif resp[0] == 'Morraaaa':
 			break
+
+	print 'escutador morreu'
 
 if __name__ == '__main__':  ###Programa principal
 	"""
@@ -138,8 +153,8 @@ if __name__ == '__main__':  ###Programa principal
 			if c == '1': # Cliente escolhe lançar novo produto
 				print "---------Lançar Produto---------"
 				while 1:  #Laço do Lança_Produto
-					nome = raw_input('Digite o nome do novo produto:\n')  # Armazena a resposta do usuário na variável 'nome'
-					nome = testa_entrada(nome, 0)  # Rotina para testar se a entrada é um valor não nulo
+					produto = raw_input('Digite o nome do novo produto:\n')  # Armazena a resposta do usuário na variável 'produto'
+					produto = testa_entrada(produto, 0)  # Rotina para testar se a entrada é um valor não nulo
 
 					descricao = raw_input('Digite a descricao do novo produto:\n')
 					# Armazena a resposta do usuário na variável 'descricao'
@@ -172,7 +187,7 @@ if __name__ == '__main__':  ###Programa principal
 					# Armazena a resposta do usuário na variável 'tempo_max'
 					tempo_max = testa_entrada(tempo_max, 0, 'numero')  # Rotina para testar se a entrada é um valor compatível
 
-					soc.sendall('Lanca_produto' + "," + str(nome) + "," + str(descricao) + "," + str(lance_min) + "," + str(dia) + "," +\
+					soc.sendall('Lanca_produto' + "," + str(produto) + "," + str(descricao) + "," + str(lance_min) + "," + str(dia) + "," +\
 						str(mes) + "," + str(ano) + "," + str(hora) + "," + str(minuto) + "," + str(segundo) + "," + str(tempo_max))
 					#Envia a mensagem para o cliente
 
@@ -210,35 +225,57 @@ if __name__ == '__main__':  ###Programa principal
 
 			elif c=='4':
 				d=raw_input('Digite o índice do leilão:\n')
-				soc.sendall('Entrar_leilao,'+d)
-				resp=soc.recv(1024)
-				if resp=='ok':
-					PORT1 = PORT + int(float(d)) # A mesma porta usada pelo servidor
-					soc_temp='conexao'+d
-					globals()[soc_temp] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket
-					globals()[soc_temp].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)  # forçar que o socket desaloque a porta quando fechar o código
-					while 1:  # loop para o cliente não travar caso o servidor não tenha sido aberto
-						try:
-							globals()[soc_temp].connect((HOST, PORT1))  # Abre uma conexão com IP e porta especificados
+
+
+				flag3=0 #para decidir se já esteve neste leilão ou não
+				for i in lista_leiloes_logados: # corre leilões logados
+					if int(float(d)) == i[0]: #se já esteve neste leilão, evita criação do thread ouvinte
+						if i[2]==1: # se o cliente já saiu deste leilão
+							flag3 = 1
 							break
-						except:
-							time.sleep(1)
-					print "Você está conectado ao leilão de número "+d+'\n'
-					temp2 = int(float(soc.recv(1024)))  # variável que guarda posiçaõ do cliente na lista de participantes do leilão específico
-					globals()[soc_temp].sendall(str(temp2))
-					print temp2
-					escuta = threading.Thread(target=ouvinte_de_lances, args=(globals()[soc_temp], temp2))
-					escuta.start()
+						else:
+							flag3=2 #se o cliente nunca saiu deste leilão
+				if flag3==0:
+					print 'tentativa de primeira entrada no leilão'
+					soc.sendall('Entrar_leilao,' + d)
+					resp = soc.recv(1024)
+					if resp=='ok':
+						PORT1 = PORT + int(float(d))  # A mesma porta usada pelo servidor
+						soc_temp = 'conexao' + d
+						globals()[soc_temp] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket
+						globals()[soc_temp].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
+													   1)  # forçar que o socket desaloque a porta quando fechar o código
+						while 1:  # loop para o cliente não travar caso o servidor não tenha sido aberto
+							try:
+								globals()[soc_temp].connect((HOST, PORT1))  # Abre uma conexão com IP e porta especificados
+								break
+							except:
+								time.sleep(1)
+						print "Você está conectado ao leilão de número " + d + '\n'
+						temp2 = int(float(soc.recv(1024)))  # variável que guarda posiçaõ do cliente na lista de participantes do leilão específico
+						print temp2
+						globals()[soc_temp].sendall(str(temp2)+','+nome)
+						escuta = threading.Thread(target=ouvinte_de_lances, args=(globals()[soc_temp], temp2))
+						escuta.start()
+						flag = 1
+						num_leiloes = num_leiloes + 1
+						time.sleep(1)  # Para dar tempo de receber a resposta do leilão do servidor
+					else:
+						print 'Índice de leilão inválido'
 
-
-
-					flag=1
-					num_leiloes=num_leiloes+1
-					time.sleep(2) #Para dar tempo de receber a resposta do leilão do servidor
-
-
+				elif flag3==1:
+					soc.sendall('Entrar_leilao,' + d)
+					print "tentativa de reconexão"
+					resp = soc.recv(1024)
+					if resp=='ok':
+						print 'Conexão reestabelecida com leilão',d
+					#else:
+						#print 'Cliente já participa deste leilão',d
 				else:
-					print 'Índice de leilão inválido'
+					print '\nCliente já está participando deste leilão\n'
+
+
+
 
 			elif c=='5':
 				if flag==0:
@@ -251,7 +288,7 @@ if __name__ == '__main__':  ###Programa principal
 					lance_mensagem=testa_entrada(lance_mensagem, 0, 'numero')  # Rotina para testar se a entrada é um valor compatível
 					flag2=0
 					for i in lista_leiloes_logados:
-						if i[0]==indice_mensagem:
+						if i[0]==indice_mensagem and i[2]==0:
 							soc.sendall('Enviar lance'+','+str(indice_mensagem)+','+str(lance_mensagem))
 							resp=soc.recv(1024)
 							if resp == 'ok':
@@ -276,13 +313,16 @@ if __name__ == '__main__':  ###Programa principal
 					indice_mensagem = testa_entrada(indice_mensagem, 0,'numero')  # Rotina para testar se a entrada é um valor compatível
 					flag2 = 0
 					for i in lista_leiloes_logados:
-						if i[0]==indice_mensagem:
-							soc.sendall('Sair_leilao' + ',' + str(indice_mensagem)+','+str(i[1]))
+						if i[0]==indice_mensagem and i[2]==0:
+							print 'entrei'
+							soc.sendall('Sair_leilao,' + str(indice_mensagem)+','+str(i[1]))
 							resp = soc.recv(1024)
 							if resp == 'ok':
 								print '\nUsuário retirado de leilão com sucesso\n'
 								num_leiloes -= 1
-								lista_leiloes_logados.remove(i)
+								if num_leiloes == 0:
+									flag=0
+								i[2]=1 #muda o estado de participação no leilão específico para offline
 								break
 							elif resp == 'not_ok,1':
 								print 'trouble'
