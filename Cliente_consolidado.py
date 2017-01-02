@@ -26,20 +26,26 @@ def testa_entrada(valor,l,num=0,max=100):
 	return valor #retorna valor válido
 
 
-def ouvinte_de_lances(canal):
+def ouvinte_de_lances(canal, posicao_no_leilao):
 	global lista_leiloes_logados
 	temp = 0
 	resp = canal.recv(1024)
 	m=resp.split(',')
-	lista_leiloes_logados.append(int(float(m[1])))
+	lista_leiloes_logados.append([int(float(m[1])), posicao_no_leilao])
+
+
 	time.sleep(0.1)
 
 	while 1:
 		resp = canal.recv(1024)
-		if resp != temp: # Se a mensagem for igual, ele ignora
-			time.sleep(0.1)
-			print resp
-		temp = resp
+		if resp != 'Morraaaa':
+			if resp != temp: # Se a mensagem for igual, ele ignora (mandar tmb versão sem isso)
+				time.sleep(0.1)
+				print resp
+			temp = resp
+		else:
+			print 'escutador morreu'
+			break
 
 if __name__ == '__main__':  ###Programa principal
 	"""
@@ -128,7 +134,7 @@ if __name__ == '__main__':  ###Programa principal
 				print "Diga o que deseja fazer:"
 				c = raw_input(
 					'0 para listar leilões \n1 para Lançar um novo produto\n2 para apagar usuário\n3 para sair\n' + \
-					'4 para entrar em leilão\n5 para dar lance\n\n')
+					'4 para entrar em leilão\n5 para dar lance\n6 para sair de um leilão\n\n')
 			if c == '1': # Cliente escolhe lançar novo produto
 				print "---------Lançar Produto---------"
 				while 1:  #Laço do Lança_Produto
@@ -218,11 +224,14 @@ if __name__ == '__main__':  ###Programa principal
 						except:
 							time.sleep(1)
 					print "Você está conectado ao leilão de número "+d+'\n'
-					escuta = threading.Thread(target=ouvinte_de_lances, args=(globals()[soc_temp],))
+					temp2 = int(float(soc.recv(1024)))  # variável que guarda posiçaõ do cliente na lista de participantes do leilão específico
+					globals()[soc_temp].sendall(str(temp2))
+					print temp2
+					escuta = threading.Thread(target=ouvinte_de_lances, args=(globals()[soc_temp], temp2))
 					escuta.start()
-					logado=int(float(soc.recv(1024))) #variável que guarda posiçaõ do cliente na lista de participantes do leilão específico
-					                                # ainda vai ser convertida pra global pra ser usada
-					print logado
+
+
+
 					flag=1
 					num_leiloes=num_leiloes+1
 					time.sleep(2) #Para dar tempo de receber a resposta do leilão do servidor
@@ -242,7 +251,7 @@ if __name__ == '__main__':  ###Programa principal
 					lance_mensagem=testa_entrada(lance_mensagem, 0, 'numero')  # Rotina para testar se a entrada é um valor compatível
 					flag2=0
 					for i in lista_leiloes_logados:
-						if i==indice_mensagem:
+						if i[0]==indice_mensagem:
 							soc.sendall('Enviar lance'+','+str(indice_mensagem)+','+str(lance_mensagem))
 							resp=soc.recv(1024)
 							if resp == 'ok':
@@ -258,7 +267,29 @@ if __name__ == '__main__':  ###Programa principal
 					if flag2==0:
 						print '\nOpção inválida, cliente não está participando de nenhum leilão com este índice\n'
 
+			elif c=='6':
+				if flag == 0:
+					print '\nOpção inválida, cliente não está participando de nenhum leilão\n'
 
+				else:
+					indice_mensagem = raw_input('Digite o índice do leilão correspondente\n')
+					indice_mensagem = testa_entrada(indice_mensagem, 0,'numero')  # Rotina para testar se a entrada é um valor compatível
+					flag2 = 0
+					for i in lista_leiloes_logados:
+						if i[0]==indice_mensagem:
+							soc.sendall('Sair_leilao' + ',' + str(indice_mensagem)+','+str(i[1]))
+							resp = soc.recv(1024)
+							if resp == 'ok':
+								print '\nUsuário retirado de leilão com sucesso\n'
+								num_leiloes -= 1
+								lista_leiloes_logados.remove(i)
+								break
+							elif resp == 'not_ok,1':
+								print 'trouble'
+							flag2 = 1
+							break
+						if flag2 == 0:
+							print '\nOpção inválida, cliente não está participando de nenhum leilão com este índice\n'
 
 
 

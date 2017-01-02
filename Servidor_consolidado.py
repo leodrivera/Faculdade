@@ -301,18 +301,19 @@ def escuta_participantes(indice,identificador):
     while 1:
         globals()[com2].listen(1)
         canal_envio, addr2 = globals()[com2].accept()
+        posicao_cliente_leilao=int(float(canal_envio.recv(1024)))
 
         #Thread para a comunicação síncrona
-        falador1 = threading.Thread(target=sincrono_lances, args=(canal_envio, indice, identificador))
+        falador1 = threading.Thread(target=sincrono_lances, args=(canal_envio, indice, identificador, posicao_cliente_leilao))
         falador1.start()
 
         time.sleep(0.5)
 
         #Thread para a comunicação asíncrona
-        falador2 = threading.Thread(target=assincrono_lances, args=(canal_envio, indice, identificador))
+        falador2 = threading.Thread(target=assincrono_lances, args=(canal_envio, indice, identificador, posicao_cliente_leilao))
         falador2.start()
 
-def sincrono_lances(canal_envio, indice, identificador):
+def sincrono_lances(canal_envio, indice, identificador, posicao_cliente_leilao):
     global controle
 
     canal_envio.sendall('\nConexão estabelecida para relatórios de leilão,\n'+str(identificador))
@@ -320,34 +321,43 @@ def sincrono_lances(canal_envio, indice, identificador):
 
     while 1:
         acquire_leitor(identificador)
-        if controle.lista_leiloes_correntes[indice].flag_de_iniciado == 0:
-            release_leitor(identificador)
-            time.sleep(1)
-            pass
+        if controle.lista_leiloes_correntes[indice].participantes[posicao_cliente_leilao][1]==0:
+            if controle.lista_leiloes_correntes[indice].flag_de_iniciado == 0:
+                release_leitor(identificador)
+                time.sleep(1)
+                pass
+            else:
+                release_leitor(identificador)
+                mensagem(canal_envio, indice, identificador)
+                time.sleep(1)
         else:
-            release_leitor(identificador)
-            mensagem(canal_envio, indice, identificador)
-            time.sleep(1)
+            break
+    print 'sincrono morreeeeeu'
 
 
-def assincrono_lances(canal_envio, indice, identificador):
+def assincrono_lances(canal_envio, indice, identificador, posicao_cliente_leilao):
     #Verifica o lance corrente. Se ele for diferente do antigo (ou seja, algum cliente tiver feito um lance), ele envia
     #  a mensagem para os usuários informando que foi feito um novo lance
     acquire_leitor(identificador)
     antigo=controle.lista_leiloes_correntes[indice].lance_corrente
     release_leitor(identificador)
     while 1:
-        time.sleep(0.2)
         acquire_leitor(identificador)
-        if controle.lista_leiloes_correntes[indice].flag_de_iniciado == 0:
-            release_leitor(identificador)
-            time.sleep(1)
-            pass
+        if controle.lista_leiloes_correntes[indice].participantes[posicao_cliente_leilao][1] == 0:
+            time.sleep(0.2)
+            if controle.lista_leiloes_correntes[indice].flag_de_iniciado == 0:
+                release_leitor(identificador)
+                time.sleep(1)
+                pass
+            else:
+                novo = controle.lista_leiloes_correntes[indice].lance_corrente
+                release_leitor(identificador)
+                if novo!=antigo:
+                    mensagem(canal_envio, indice, identificador)
         else:
-            novo = controle.lista_leiloes_correntes[indice].lance_corrente
-            release_leitor(identificador)
-            if novo!=antigo:
-                mensagem(canal_envio, indice, identificador)
+            canal_envio.sendall('Morraaaa')
+            break
+    print "assíncrono morreeeu"
 
 def mensagem(canal_envio, indice, identificador):
     acquire_leitor(identificador)
@@ -512,7 +522,7 @@ def servidor(conn,addr):
                         print 'Usuário '+str(logado.nome)+' de índice '+str(logado.indice.strip())+' logado com ip e porta '+str(logado.socket1)+'\n'
                         name = logado.nome # armazenamento do nome do cliente logado para utilização na criação de leilão
                         logado=logado.indice
-                        controle.onlines.append(logado) #acréscimo do cliente a variável de controle dos usuários logados
+                        controle.onlines.append(logado) # guardamos o identificador do cliente
 
                         conn.sendall('ok')
                         estado = 1 # alteração do servidor para switch 2 ao fim do while(1) (logado)
@@ -638,8 +648,21 @@ def servidor(conn,addr):
                             globals()[prote].acquire()
                             ii[1]=1
                             globals()[prote].release()
-                print 'Cliente resolveu sair'
+                            break
+                print 'Cliente '+str(logado)+' resolveu sair'
                 conn.sendall('ok')
+
+            elif b[0]=='Sair_leilao':
+                for i in controle.lista_leiloes_correntes:
+                    if i.identificador==int(float(b[1])):
+                        prote = 'sem_lp' + str(i.identificador)
+                        globals()[prote].acquire()
+                        i.participantes[int(float(b[2]))][1]=1
+                        globals()[prote].release()
+                        print 'Usuário '+str(logado)+' saiu do leilão '+ str(i.identificador)
+                        conn.sendall('ok')
+                        break
+
 
             elif b[0] == 'Enviar lance':
                 b[2]=float(b[2])
