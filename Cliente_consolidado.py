@@ -84,7 +84,6 @@ def ouvinte_de_lances(canal, posicao_no_leilao):
 			break
 
 def verif_mensagens(soc): #verificação de mensagens pendentes no login
-	print 'Esperando fim de leilões'
 	while 1:
 
 		resp2=soc.recv(1024)
