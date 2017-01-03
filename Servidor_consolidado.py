@@ -314,6 +314,33 @@ def mata_leilao(indice,identificador): # Thread que verifica se cada leilão tev
                 mens_p_dono = 'Leilao_sem_lances,'+str(identificador)
                 print '\nNão há vncedor no leilão para receber a mensage de contato do dono\n'
             controle.lista_usuario[cont1].mensagens_pendentes.append(mens_p_dono)
+
+            print 'Consertando txt e ambiente de varáveis após fim de leilão'
+            arq = open('leiloes_futuros.txt', 'w')  # apagando txt de usuários
+            arq.close()  #
+            temp = open('leiloes_futuros.txt', 'a')
+            acquire_leitor(identificador)
+            for ind in controle.lista_leiloes_futuros:
+                if ind.identificador != identificador:
+                    print ind.nome + ' rearquivado'
+                    ind.arquivar_leilao_futuro()
+                else:
+                    temp3 = ind
+                    print ind.nome + ' removido'
+            release_leitor(identificador)
+            acquire_escritor(identificador)
+            controle.lista_leiloes_futuros.remove(temp3)
+            acquire_escritor(identificador)
+            temp.close()
+
+
+
+            temp2 = open('leiloes_terminados.txt', 'a')
+            temp2.write(str(temp3.identificador) + ',' + temp3.nome + ',' + temp3.descricao + ',' \
+                + str(temp3.dia) + ',' + str(temp3.mes) + ',' + str(temp3.ano) + ',' + str(temp3.hora) + ',' + str(
+                    temp3.minuto) + ',' + str(temp3.segundo)+'\n')
+            temp2.close()
+
             break
         else:
             release_escritor(identificador)
@@ -533,6 +560,15 @@ def cria_arquivos_leilao():
         f.write('0')
         f.close()
 
+    try:
+        f = open('leiloes_terminados.txt')  # Abre o arquivo numero_de_leiloes_cadastrados.txt. Se não tiver, ele acusa erro e cria um
+        f.close()
+
+    except IOError:
+        f = open('leiloes_terminados.txt','w')
+        f.write('0')
+        f.close()
+
 
 def mesageiro_de_finais(conn3, name, logado):
     morte = 'morte_' + str(logado)
@@ -594,12 +630,12 @@ def servidor(conn,addr):
                     estado = 1  # alteração do servidor para switch 2 ao fim do while(1) (logado)
 
                     # socket para recebimento de mensagens d fim de leilão
-                    HOST3 = ''  # Link simbólico representando todas as interfaces disponíveis
+
                     PORT3 = 60000 + logado  # Porta
                     s3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket (TCP)
                     s3.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
                                   1)  # forçar que o socket desaloque a porta quando fechar o código
-                    s3.bind((HOST3, PORT3))  # liga o socket com IP e porta
+                    s3.bind((HOST, PORT3))  # liga o socket com IP e porta
                     s3.listen(1)
                     conn3, addr3 = s3.accept()  # Aceita uma conexão
                     morte='morte_'+str(logado)
@@ -630,12 +666,12 @@ def servidor(conn,addr):
 
 
                         #socket para recebimento de mensagens d fim de leilão
-                        HOST3 = ''  # Link simbólico representando todas as interfaces disponíveis
+
                         PORT3 = 60000 + int(logado )# Porta
                         s3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket (TCP)
                         s3.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
                                      1)  # forçar que o socket desaloque a porta quando fechar o código
-                        s3.bind((HOST3, PORT3))  # liga o socket com IP e porta
+                        s3.bind((HOST, PORT3))  # liga o socket com IP e porta
                         s3.listen(1)
                         conn3, addr3 = s3.accept()  # Aceita uma conexão
 
@@ -730,6 +766,9 @@ def servidor(conn,addr):
                         print ind.nome+' removido'
                 controle.lista_usuario.remove(flag)
                 temp.close()
+
+
+
                 estado=0
                 conn.sendall('ok')
 
