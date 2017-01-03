@@ -268,7 +268,7 @@ def mata_leilao(indice,identificador): # Thread que verifica se cada leilão tev
         release_leitor(identificador)
         acquire_escritor(identificador)
         if soneca<=0:
-            print 'mando leilão'
+            print 'matando leilão'
             controle.lista_leiloes_correntes[indice].flag_de_situacao=2
             release_escritor(identificador)
             acquire_leitor(identificador)
@@ -278,75 +278,42 @@ def mata_leilao(indice,identificador): # Thread que verifica se cada leilão tev
             valor=controle.lista_leiloes_correntes[indice].lance_corrente
             release_leitor(identificador)
 
-            if str(vencedor) != 'Aguardando o envio':
+            cont1 = 0
+            for i in controle.lista_usuario:  # colhendo informações do dono
+                if i.nome == dono:
+                    endereco_dono = i.endereco
+                    telefone_dono = i.telefone
+                    email_dono = i.email
+                    break
+                cont1 += 1
 
+            if str(vencedor) != 'Aguardando o envio':
+                cont2=0
                 for i in controle.lista_usuario: #colhendo informações do vencedor
                     if i.nome==vencedor:
                         endereco_venc=i.endereco
                         telefone_venc=i.telefone
                         email_venc=i.email
-                        indice_vencedor=i.indice
-                    if i.nome==dono:
-                        endereco_dono=i.endereco
-                        telefone_dono=i.telefone
-                        email_dono=i.email
-
-                #composição da mensgame contato cliente
-
-                mens_p_dono = 'Contato_cliente', identificador, valor, vencedor, endereco_venc, telefone_venc, email_venc
-                mens_p_vencedor = 'Contato_vendedor', identificador, valor, vencedor, endereco_dono, telefone_dono, email_dono
-
-            else:
-
-                mens_p_dono = 'Leilao_sem_lances,'+str(identificador)
-
-            marcador1 = 0
-            marcador2 = 0
-            for i in controle.onlines: #verificando se vencedor e dono estão onlines
-                if dono==i:
-                    print 'Dono online'
-                    marcador1 = 1
-                elif vencedor==i:
-                    print 'Vencedor online'
-                    marcador2 = 1
-
-            if marcador1 == 0:  # Dono offline
-                for i in controle.lista_usuario:
-                    if i.nome==dono:
-                        print 'salvando mensagem para dono'
-                        i.mensagens_pendentes.append(mens_p_dono)
-                        break
-            else:
-                print 'Envio imediato para o dono'
-
-            if str(vencedor) != 'Aguardando o envio':
-
-                cont2=0
-                for i in controle.lista_leiloes_correntes[indice].participantes:
-                    if i[0]==indice_vencedor:
+                        #indice_vencedor=i.indice
                         break
                     cont2+=1
 
-                if marcador2 == 0:  # "vencedor offline"
-                    for i in controle.lista_usuario:
-                        if i.nome==vencedor:
-                            print 'salvando mensagem para vencedor'
-                            i.mensagens_pendentes.append(mens_p_vencedor)
-                            break
-                elif controle.lista_leiloes_correntes[indice].participantes[cont2][1]==2: # vencedor saiu do sistema antes do fim do leilão
-                                                                                          #
 
-                    print '\n Vencedor saiu do sistema antes do fim do leilão, voltou mas não entrou no leilão novamente'
+                #composição da mensgame contato cliente
+                print 'compondo mensagens de contato'
+                mens_p_dono = 'Contato_cliente,'+str(identificador)+','+str(valor)+','+str(vencedor)+','+ str(endereco_venc)\
+                              +','+ str(telefone_venc)+ ','+ str(email_venc)
+                mens_p_vencedor = 'Contato_vendedor,'+ str(identificador)+','+ str(valor)+','+ str(vencedor)+','+ str(endereco_dono)+','+\
+                                  str(telefone_dono)+','+ str(email_dono)
 
-
-
-                else: # Vencedor online e ainda com mensageiros do leilão
-
-                    print '\nVencedor online no fim do leilão, mensagem será enviada pelo mensageiro assíncrono'
+                controle.lista_usuario[cont2].mensagens_pendentes.append(mens_p_vencedor)
 
             else:
-                print '\nNão há vncedor no leilão para recener a mensage de contato do dono\n'
 
+
+                mens_p_dono = 'Leilao_sem_lances,'+str(identificador)
+                print '\nNão há vncedor no leilão para receber a mensage de contato do dono\n'
+            controle.lista_usuario[cont1].mensagens_pendentes.append(mens_p_dono)
             break
         else:
             release_escritor(identificador)
@@ -471,17 +438,6 @@ def assincrono_lances(canal_envio, indice, identificador, posicao_cliente_leilao
                       ','+str(controle.lista_leiloes_correntes[indice].vencedor_corrente)
                 canal_envio.sendall(mess)
 
-                time.sleep(0.5)
-
-                if str(nome)==str(controle.lista_leiloes_correntes[indice].vencedor_corrente): #testa se o cliente é o vencedor
-                    for i in controle.lista_usuario:
-                        if i.nome == controle.lista_leiloes_correntes[indice].dono:
-                            mess='Contato_vendendor,'+str(identificador)+','+\
-                                     str(controle.lista_leiloes_correntes[indice].lance_corrente)+','+\
-                                 i.nome+','+i.endereco+','+i.telefone+','+i.email
-
-                            canal_envio.sendall(mess)
-                            break #sai do for de busca de dono
                 release_leitor(identificador)
                 break  # Sai do while 1 para morrer
 
@@ -494,6 +450,7 @@ def assincrono_lances(canal_envio, indice, identificador, posicao_cliente_leilao
         else: # flag=2, matar comunicações com cliente sobre este leilão
             release_leitor(identificador)
             break
+    time.sleep(0.5)
     canal_envio.sendall('Morraaaa')
     print "assíncrono morreeeu"
 
@@ -549,32 +506,7 @@ def listar_leiloes(conn,lista):
         str(i.t_max), str(i.dono)))
         conn.sendall(lista1)
         time.sleep(0.1)
-"""
-def listar_leiloes(valor):
-    if valor == 1:
-        lista1 = '\nLeilões em que você está apto a participar:\n'
-        lista2 = "\nLeilões futuros com mais de 30 minutos para iniciar:\n"
-    else:
-        lista1 = '\nLeilões armazenados:\n'
-        lista2 = ""
 
-    for i in controle.lista_leiloes_correntes:
-
-        lista1 = ( lista1 + '\nNome do produto: ' + str(i.nome) + '\nÍndice: ' + str(i.identificador) + '\nDescrição do produto: ' + str(i.descricao) +\
-            '\nLance mínimo: R$' + str(i.lance_minimo) + '\nDia e hora do leilão: ' + str(i.dia) + '/' +\
-            str(i.mes) + '/' + str(i.ano) + ' as ' + str(i.hora) + ':' + str(i.minuto) + ':' + str(\
-            i.segundo) +'\nO tempo máximo entre lances é de: ' + str(i.t_max) + ' segundos'+\
-            '\nO leilao pertence a: ' + str(i.dono) + '\n')
-
-    for i in controle.lista_leiloes_futuros:
-        lista2 = (lista2 + '\nNome do produto: ' + str(i.nome) + '\nÍndice: ' + str(i.identificador) + '\nDescrição do produto: ' + str(i.descricao) + \
-            '\nLance mínimo: R$' + str(i.lance_minimo) + '\nDia e hora do leilão: ' + str(i.dia) + '/' + \
-            str(i.mes) + '/' + str(i.ano) + ' as ' + str(i.hora) + ':' + str(i.minuto) + ':' + str( \
-            i.segundo) + '\nO tempo máximo entre lances é de: ' + str(i.t_max) + ' segundos' + \
-            '\nO leilao pertence a: ' + str(i.dono) + '\n')
-    lista = lista1+lista2
-    return lista
-"""
 def cria_arquivos_leilao():
     try:
         f = open('leiloes_futuros.txt')  # Abre o arquivo leiloes_futuros.txt. Se não tiver, ele acusa erro e cria um
@@ -600,6 +532,25 @@ def cria_arquivos_leilao():
         f = open('numero_de_clientes_cadastrados.txt','w')
         f.write('0')
         f.close()
+
+
+def mesageiro_de_finais(conn3, name, logado):
+    morte = 'morte_' + str(logado)
+    for i in controle.lista_usuario:  # Verificação de mensagen pendentes no login
+        if i.nome == name:
+            while 1:
+                if globals()[morte]==0:
+                    #aqui tem que entrar proteção pra controle
+                    if len(i.mensagens_pendentes) != 0:  # Existem mensagens a serem enviadas
+
+                        conn3.sendall(str(i.mensagens_pendentes.pop(0)))
+                        print 'enviando fim pro thread novo'
+                    time.sleep(1)
+                else:
+                    conn3.sendall('morraa')
+                    print '\Morre o enviador de finais'
+                    break
+
 
 #Servidor Thread
 def servidor(conn,addr):
@@ -649,9 +600,12 @@ def servidor(conn,addr):
                     s3.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
                                   1)  # forçar que o socket desaloque a porta quando fechar o código
                     s3.bind((HOST3, PORT3))  # liga o socket com IP e porta
-
+                    s3.listen(1)
                     conn3, addr3 = s3.accept()  # Aceita uma conexão
-
+                    morte='morte_'+str(logado)
+                    globals()[morte]=0
+                    envia_finais = threading.Thread(target=mesageiro_de_finais, args=(conn3, name, logado))
+                    envia_finais.start()
 
                     break
 
@@ -677,12 +631,12 @@ def servidor(conn,addr):
 
                         #socket para recebimento de mensagens d fim de leilão
                         HOST3 = ''  # Link simbólico representando todas as interfaces disponíveis
-                        PORT3 = 60000 + logado # Porta
+                        PORT3 = 60000 + int(logado )# Porta
                         s3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket (TCP)
                         s3.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
                                      1)  # forçar que o socket desaloque a porta quando fechar o código
                         s3.bind((HOST3, PORT3))  # liga o socket com IP e porta
-
+                        s3.listen(1)
                         conn3, addr3 = s3.accept()  # Aceita uma conexão
 
                         for i in controle.lista_usuario: # Verificação de mensagen pendentes no login
@@ -691,6 +645,11 @@ def servidor(conn,addr):
                                     time.sleep(0.5)
                                     for ii in range(len(i.mensagens_pendentes)):
                                         conn3.sendall(str(i.mensagens_pendentes.pop(0)))
+
+                        morte = 'morte_' + str(logado)
+                        globals()[morte] = 0
+                        envia_finais = threading.Thread(target=mesageiro_de_finais, args=(conn3,name, logado))
+                        envia_finais.start()
 
 
 
@@ -708,22 +667,6 @@ def servidor(conn,addr):
             listar_leiloes(conn,controle.lista_leiloes_futuros)
 
 
-
-        """
-        elif a[0] == 'Desligar':
-                                                             ##
-            arquivo = open('leiloes_futuros.txt', 'w')        # apagando conteúdo do txt dos leiloes não terminados
-            arquivo.close()                                   #
-                                                             ##
-
-            arquivo = open('leiloes_futuros.txt', 'w') # atualizando txt com valor dos leilões ainda não terminados
-            cont=1
-            for i in controle.lista_leiloes_correntes:
-                if teste_de_data(i.dia,i.mes,i.ano,i.h,i.minuto,i.segundo,0)==1:
-                    arquivo.write(i.nome + ',' + i.descricao + ',' + str(i.lance_minimo) + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto) + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + i.dono + +','+str(cont)+'\n')
-                    cont+=1
-                    # aqui vai comando pra matar thread
-        """
 
         while estado == 1: # Switch 2
             print 'switch2\n'
@@ -868,9 +811,12 @@ def servidor(conn,addr):
                             acquire_escritor(i.identificador)
                             ii[1]=2
                             release_escritor(i.identificador)
+
                             break
                 print 'Cliente '+str(logado)+' resolveu sair'
                 controle.onlines.remove(name)
+                morte = 'morte_' + str(logado)
+                globals()[morte] = 1 # variável compartilhada para matar thread de fim de leilão
                 conn.sendall('ok')
 
             elif b[0]=='Sair_leilao':
