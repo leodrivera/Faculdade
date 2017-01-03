@@ -268,9 +268,11 @@ def mata_leilao(indice,identificador): # Thread que verifica se cada leilão tev
         release_leitor(identificador)
         acquire_escritor(identificador)
         if soneca<=0:
-            print 'matei leilão'
+            print 'mando leilão'
             controle.lista_leiloes_correntes[indice].flag_de_situacao=2
             release_escritor(identificador)
+            acquire_leitor(identificador)
+
             break
         else:
             release_escritor(identificador)
@@ -294,10 +296,10 @@ def escuta_participantes(indice,identificador):
     globals()[com2].bind((HOST1, PORT1))  # liga o socket com IP e porta
 
     while 1:
-        globals()[com2].listen(1)
-        canal_envio, addr2 = globals()[com2].accept()
+        globals()[com2].listen(1) #esccuta participantes
+        canal_envio, addr2 = globals()[com2].accept() #aceita conecção com cliente
 
-        resp=canal_envio.recv(1024)
+        resp=canal_envio.recv(1024) #recebe posição do cliente na lista de participantes do leilão e seu nome
         resp=resp.split(',')
 
         posicao_cliente_leilao=int(float(resp[0]))
@@ -391,16 +393,19 @@ def assincrono_lances(canal_envio, indice, identificador, posicao_cliente_leilao
             elif controle.lista_leiloes_correntes[indice].flag_de_situacao == 2:
                 print "mensagens finais"
 
-                mess= 'Fim_leilao,'+str(identificador)+','+controle.lista_leiloes_correntes[indice].lance_corrente+\
+                mess= 'Fim_leilao,'+str(identificador)+','+str(controle.lista_leiloes_correntes[indice].lance_corrente)+\
                       ','+str(controle.lista_leiloes_correntes[indice].vencedor_corrente)
                 canal_envio.sendall(mess)
 
-                if nome==controle.lista_leiloes_correntes[indice].vencedor_corrente: #testa se o cliente é o vencedor
+                time.sleep(0.5)
+
+                if str(nome)==str(controle.lista_leiloes_correntes[indice].vencedor_corrente): #testa se o cliente é o vencedor
                     for i in controle.lista_usuario:
                         if i.nome == controle.lista_leiloes_correntes[indice].dono:
                             mess='Contato_vendendor,'+str(identificador)+','+\
                                      str(controle.lista_leiloes_correntes[indice].lance_corrente)+','+\
                                  i.nome+','+i.endereco+','+i.telefone+','+i.email
+
                             canal_envio.sendall(mess)
                             break #sai do for de busca de dono
                 release_leitor(identificador)
@@ -421,14 +426,14 @@ def assincrono_lances(canal_envio, indice, identificador, posicao_cliente_leilao
 def mensagem(canal_envio, indice, identificador, nome):
     acquire_leitor(identificador)
     cont=0
-    for i in controle.lista_leiloes_correntes[indice].participantes:
+    for i in controle.lista_leiloes_correntes[indice].participantes: # contagem de participantes do leilão
         if i[1]==0:
             cont+=1
-    mensagem = 'Leilão número ' + str(identificador) + '\n' \
-               + 'Vencedor até o momento: ' + controle.lista_leiloes_correntes[indice].vencedor_corrente + '\n' \
-               + 'Lance vencedor até o momento: R$' + str(controle.lista_leiloes_correntes[indice].lance_corrente) + '\n' \
-               + 'Número de usuários participantes: ' + str(cont) + '\n' \
-               + 'Número de lances já efetuados: ' + str(controle.lista_leiloes_correntes[indice].conta_lances) + '\n'
+    mensagem = 'Lance,' + str(identificador) + ',' \
+               + controle.lista_leiloes_correntes[indice].vencedor_corrente + ',' \
+               + str(controle.lista_leiloes_correntes[indice].lance_corrente) + ',' \
+               + str(cont) + ',' \
+               + str(controle.lista_leiloes_correntes[indice].conta_lances)
     release_leitor(identificador)
     canal_envio.sendall(mensagem)
 
@@ -571,8 +576,6 @@ def servidor(conn,addr):
             while 1: #Fica no loop para caso a ele erre alguma coisa, tentar novamente
             #Se o nome que ele digitou for igual ao nome e a senha
             # forem iguais as que tenho no regsitro, ele faz o login
-            ## print "Entrei login"
-            #nome1 = globals()[a[1]].nome #Como fazer a comparação direto?
                 try:
                     k1=controle.checar_nome_existente(a[1],1,a[2]) # Verificação se nome existe
                     if (k1 == 1):
@@ -596,11 +599,10 @@ def servidor(conn,addr):
             print 'Listando leilões para anônimo\n'
             conn.sendall(listar_leiloes(0))
 
-
-
+        """
         elif a[0] == 'Desligar':
                                                              ##
-            arquivo = open('leiloes_futuros.txt', 'w') # apagando conteúdo do txt dos leiloes não terminados
+            arquivo = open('leiloes_futuros.txt', 'w')        # apagando conteúdo do txt dos leiloes não terminados
             arquivo.close()                                   #
                                                              ##
 
@@ -611,6 +613,7 @@ def servidor(conn,addr):
                     arquivo.write(i.nome + ',' + i.descricao + ',' + str(i.lance_minimo) + ',' + str(i.dia) + ',' + str(i.mes) + ',' + str(i.ano) + ',' + str(i.ano) + ',' + str(i.hora) + ',' + str(i.minuto) + ',' + str(i.segundo) + ',' + str(i.t_max) + ',' + i.dono + +','+str(cont)+'\n')
                     cont+=1
                     # aqui vai comando pra matar thread
+        """
 
         while estado == 1: # Switch 2
             print 'switch2\n'
@@ -646,7 +649,6 @@ def servidor(conn,addr):
                     hora_leilao = time.mktime(hora_leilao.timetuple())
                     controle.inicios_de_leilao.append([leilaao.identificador, hora_leilao]) #Adiciona o identificador do leilão e
                     #  a hora em que ele começa
-                    print controle.inicios_de_leilao
                     conn.sendall('ok')
                     print 'Leilão criado com sucesso\n'
                 else:
@@ -682,56 +684,63 @@ def servidor(conn,addr):
                     acquire_leitor(i.identificador)
                     if b[1] == str(i.identificador): # executado quando o leilão pedido está em andamento
                         flag3 = 1
-                        flag4=0
-                        cont2=0
-                        for ii in i.participantes: # corre clientes do leilão
-                            if float(logado) == float(ii[0]): # verifica se cliente já esteve neste leilão
-                                if ii[1]==1: # Verifica se os threads mensageiros ainda existem
-                                    print 'voltei'
-                                    flag4 = 1 # Executado quando os threads não devem ser criados novamente
-                                    break
-                                elif ii[1]==0: #cliente ainda participa do leilão
-                                    flag4 = 2
-                                    break
-                                else : #cleinte sai do sistema matando todos os threads mensageiros depois de entrar no leilão
-                                    flag4 = 3
-                                    break
-                            cont2+=1
-                        release_leitor(i.identificador)
-                        print flag4
-                        if flag4==0:
-                            print 'tentativa de primeira entrada no leilão'
-                            conn.sendall('ok')
-                            time.sleep(0.4)
-                            acquire_escritor(i.identificador)
-                            i.participantes.append([int(float(logado)), 0, 0])
-                            conn.sendall(str(len(i.participantes)-1))
-                            print i.participantes
-                            release_escritor(i.identificador)
-                            break
-                        elif flag4==1:
-                            print 'tentativa de reconexão'
-                            acquire_escritor(i.identificador)
-                            i.participantes[cont2][1]=0 # Reestabelece o status online para o cliente no leilão
-                            release_escritor(i.identificador)
-                            conn.sendall('ok') # relogin efetuado com sucesso
-                            break
-                        elif flag4==2:
-                            print 'negado pois já está no leilão'
-                            conn.sendall('not_ok') # mensagem de que cliente não deve
-                                                   #  ser incluido mais de uma vez no mesmo leilão
-                            break
-                        else:
-                            print 'cliente retornando após ter deslogado'
-                            conn.sendall('ok')
-                            time.sleep(0.4)
-                            acquire_escritor(i.identificador)
-                            i.participantes[cont2][1]=0
-                            conn.sendall(str(cont2))
-                            print i.participantes
-                            release_escritor(i.identificador)
-                            break
+                        if i.dono!=name:
 
+
+                            flag4=0
+                            cont2=0
+                            for ii in i.participantes: # corre clientes do leilão
+                                if float(logado) == float(ii[0]): # verifica se cliente já esteve neste leilão
+                                    if ii[1]==1: # Verifica se os threads mensageiros ainda existem
+                                        print 'voltei'
+                                        flag4 = 1 # Executado quando os threads não devem ser criados novamente
+                                        break
+                                    elif ii[1]==0: #cliente ainda participa do leilão
+                                        flag4 = 2
+                                        break
+                                    else : #cleinte sai do sistema matando todos os threads mensageiros depois de entrar no leilão
+                                        flag4 = 3
+                                        break
+                                cont2+=1
+                            release_leitor(i.identificador)
+                            print flag4
+                            if flag4==0:
+                                print 'tentativa de primeira entrada no leilão'
+                                conn.sendall('ok')
+                                time.sleep(0.4)
+                                acquire_escritor(i.identificador)
+                                i.participantes.append([int(float(logado)), 0, 0])
+                                conn.sendall(str(len(i.participantes)-1))
+                                print i.participantes
+                                release_escritor(i.identificador)
+                                break
+                            elif flag4==1:
+                                print 'tentativa de reconexão'
+                                acquire_escritor(i.identificador)
+                                i.participantes[cont2][1]=0 # Reestabelece o status online para o cliente no leilão
+                                release_escritor(i.identificador)
+                                conn.sendall('ok') # relogin efetuado com sucesso
+                                break
+                            elif flag4==2:
+                                print 'negado pois já está no leilão'
+                                conn.sendall('not_ok') # mensagem de que cliente não deve
+                                                       #  ser incluido mais de uma vez no mesmo leilão
+                                break
+                            else:
+                                print 'cliente retornando após ter deslogado'
+                                conn.sendall('ok')
+                                time.sleep(0.4)
+                                acquire_escritor(i.identificador)
+                                i.participantes[cont2][1]=0
+                                conn.sendall(str(cont2))
+                                print i.participantes
+                                release_escritor(i.identificador)
+                                break
+                        else:
+                            print '\nDono do leilão não deve concorrer como comprador'
+                            release_leitor(i.identificador)
+                            conn.sendall('not_ok')
+                            break
 
                 if flag3==0:
                     print 'leilão não existente'
