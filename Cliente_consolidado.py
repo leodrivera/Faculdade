@@ -220,6 +220,7 @@ if __name__ == '__main__':  ###Programa principal
 					lista_leiloes_logados=[]
 					num_leiloes=0
 					estado = 0
+					flag=0
 				else:
 					print '\nErro ao deslogar usuário, tente novamente mais tarde\n'
 
@@ -235,8 +236,9 @@ if __name__ == '__main__':  ###Programa principal
 							break
 						else:
 							flag3=2 #se o cliente nunca saiu deste leilão
+							break
 				if flag3==0:
-					print 'tentativa de primeira entrada no leilão'
+
 					soc.sendall('Entrar_leilao,' + d)
 					resp = soc.recv(1024)
 					if resp=='ok':
@@ -251,9 +253,8 @@ if __name__ == '__main__':  ###Programa principal
 								break
 							except:
 								time.sleep(1)
-						print "Você está conectado ao leilão de número " + d + '\n'
+						print "\nVocê está conectado ao leilão de número " + d + '\n'
 						temp2 = int(float(soc.recv(1024)))  # variável que guarda posiçaõ do cliente na lista de participantes do leilão específico
-						print temp2
 						globals()[soc_temp].sendall(str(temp2)+','+nome)
 						escuta = threading.Thread(target=ouvinte_de_lances, args=(globals()[soc_temp], temp2))
 						escuta.start()
@@ -265,10 +266,13 @@ if __name__ == '__main__':  ###Programa principal
 
 				elif flag3==1:
 					soc.sendall('Entrar_leilao,' + d)
-					print "tentativa de reconexão"
+
 					resp = soc.recv(1024)
 					if resp=='ok':
-						print 'Conexão reestabelecida com leilão',d
+						print '\nConexão reestabelecida com leilão',d,'\n'
+						flag=1
+						num_leiloes = num_leiloes + 1
+						time.sleep(1)  # Para dar tempo de receber a resposta do leilão do servidor
 					#else:
 						#print 'Cliente já participa deste leilão',d
 				else:
@@ -314,7 +318,6 @@ if __name__ == '__main__':  ###Programa principal
 					flag2 = 0
 					for i in lista_leiloes_logados:
 						if i[0]==indice_mensagem and i[2]==0:
-							print 'entrei'
 							soc.sendall('Sair_leilao,' + str(indice_mensagem)+','+str(i[1]))
 							resp = soc.recv(1024)
 							if resp == 'ok':
