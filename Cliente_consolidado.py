@@ -43,16 +43,26 @@ def ouvinte_de_lances(canal, posicao_no_leilao):
 		resp = canal.recv(1024)
 		resp=resp.split(',')
 		if resp[0] == 'Lance':
-			if resp[0] != temp: # Se a mensagem for igual, ele ignora (mandar tmb versão sem isso)
-				time.sleep(0.1)
+			if resp != temp: # Se a mensagem for igual, ele ignora (mandar tmb versão sem isso)
 				temp = resp
-
 				#aqui vai a função de printar completa
-				print resp
+
+				mensagem = 'Leilão número ' + resp[1] + '\n'+ 'Vencedor até o momento: '\
+						   + resp[2] + \
+						   '\n' + 'Lance vencedor até o momento: R$' +\
+						   resp[3] + '\n' \
+						   + 'Número de usuários participantes: ' + resp[4] + '\n' \
+						   + 'Número de lances já efetuados: ' +\
+						   resp[5] + '\n'
+
+				print mensagem
+
+				time.sleep(0.1)
 		elif resp[0]== 'Fim_leilao':
-			print 'Leilão número',resp[1],'foi finalizado.\nVencedor:',resp[2],'\nValor de venda: R$',resp[3]
-			if resp[2]==nome:
+			print 'Leilão número',resp[1],'foi finalizado.\nVencedor:',resp[3],'\nValor de venda: R$',resp[2]
+			if str(resp[2])==str(nome):
 				resp = canal.recv(1024)
+
 				resp = resp.split(',')
 				print 'Parabéns!!\nVocê é o vencedor do leilão',resp[1],'cujo valor foi de R$',resp[2]
 				print '\nContatos do vendedor\n\nNome:',resp[3],'\nEndereço:',resp[4],'\nTelefone:',resp[5],'\nE-mail:',resp[6]
@@ -60,7 +70,6 @@ def ouvinte_de_lances(canal, posicao_no_leilao):
 		elif resp[0] == 'Morraaaa':
 			break
 
-	print 'escutador morreu'
 
 if __name__ == '__main__':  ###Programa principal
 	"""
