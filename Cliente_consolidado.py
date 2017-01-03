@@ -103,13 +103,9 @@ def verif_mensagens(soc): #verificação de mensagens pendentes no login
 			print '\nLeilão',resp2[1],'terminado sem lances\n'
 
 if __name__ == '__main__':  ###Programa principal
-	"""
-		Fica comentado enquanto o código está em teste
-		HOST = raw_input('Digite o IP do servidor de leilão\n') # O host remoto. Nesse caso a saída precisa ser uma string
-		PORT = input('Digite a porta usada pelo servidor de leilão\n') # A mesma porta usada pelo servidor de leilão
-	"""
-	HOST = '127.0.0.1'  # The remote host
-	PORT = 50000  # The same port as used by the server
+
+	HOST = raw_input('Digite o IP do servidor de leilão\n') # O host remoto. Nesse caso a saída precisa ser uma string
+	PORT = input('Digite a porta usada pelo servidor de leilão\n') # A mesma porta usada pelo servidor de leilão
 	soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #IPv4,tipo de socket
 	soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #forçar que o socket desaloque a porta quando fechar o código
 	flag=0

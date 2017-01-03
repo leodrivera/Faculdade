@@ -1023,7 +1023,6 @@ if __name__ == '__main__':  ###Programa principal
     ini = threading.Thread(target=inicializador_de_leiloes, args=())
     ini.start()
     clientes=0
-    #logado=None
     while 1:
         s.listen(1)
         conn, addr = s.accept()  # Aceita uma conexão
