@@ -80,28 +80,28 @@ def ouvinte_de_lances(canal, posicao_no_leilao):
 		elif resp[0]== 'Fim_leilao':
 			print 'Leilão número',resp[1],'foi finalizado.\nVencedor:',resp[3],'\nValor de venda: R$',resp[2],'\n\n'
 
-			if resp[3]==nome:
-				resp = canal.recv(1024)
-				resp = resp.split(',')
-				print '---------Parabéns!!---------\nVocê é o vencedor do leilão',resp[1],'cujo valor foi de R$',resp[2]
-				print '\nContatos do vendedor\n\nNome:',resp[3],'\nEndereço:',resp[4],'\nTelefone:',resp[5],'\nE-mail:',resp[6]
-
 		elif resp[0] == 'Morraaaa':
 			break
 
 def verif_mensagens(soc): #verificação de mensagens pendentes no login
+	print 'Esperando fim de leilões'
 	while 1:
+
 		resp2=soc.recv(1024)
 		resp2=resp2.split(',')
 		if resp2[0]=='Contato_vendedor': #cliente venceu leilão enquanto estava offline
-			print '---------Parabéns!!---------\nVocê é o vencedor do leilão', resp2[1], 'cujo valor foi de R$', resp2[2]
+			print '\n---------Parabéns!!---------\nVocê é o vencedor do leilão', resp2[1], 'cujo valor foi de R$', resp2[2]
 			print '\nContatos do vendedor\n\nNome:', resp2[3], '\nEndereço:', resp2[4]\
 				, '\nTelefone:', resp2[5], '\nE-mail:', resp2[6]
 		elif resp2[0]== 'Contato_cliente': # Leilão pertencente a cliente terminiou enquanto estava offline
-			print 'Seu leilão',resp2[1],'terminou.\nO valor de venda foi:',resp2[2],'\nO comprador foi:',resp2[3]\
+			print '\nSeu leilão',resp2[1],'terminou.\nO valor de venda foi:',resp2[2],'\nO comprador foi:',resp2[3]\
 			,'\nEndereço:',resp2[4],'\nTelefone:',resp2[5],'\nE-mail:',resp2[6],'\n'
+		elif resp2[0]=='morraa':
+			print '\nMorte do esperador de fim de leilão\n'
+			break
+
 		else:
-			print 'Leilão',resp2[1],'terminado sem lances\n'
+			print '\nLeilão',resp2[1],'terminado sem lances\n'
 
 if __name__ == '__main__':  ###Programa principal
 	"""
@@ -158,6 +158,22 @@ if __name__ == '__main__':  ###Programa principal
 				if re == 'ok':
 					print('Usuário cadastrado com sucesso.\n')
 					estado=1 # Alteração para switch2 (logado)
+					HOST3 = '127.0.0.1'  # The remote host
+					PORT3 = 60000 + int(str(soc.recv(1024)))  # The same port as used by the server
+					soc3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket
+					soc3.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
+									1)  # forçar que o socket desaloque a porta quando fechar o código
+					flag = 0
+					while 1:  # loop para o cliente não travar caso o servidor não tenha sido aberto
+						try:
+							soc3.connect((HOST3, PORT3))  # Abre uma conexão com IP e porta especificados
+							break
+						except:
+							time.sleep(1)
+
+					escuta_final = threading.Thread(target=verif_mensagens, args=(soc3,))
+					escuta_final.start()
+					#pid_escutaleiloes = get.pid(escuta_final)
 					num_leiloes = 0
 					break
 				else:
