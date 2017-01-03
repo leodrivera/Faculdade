@@ -205,11 +205,6 @@ if __name__ == '__main__':  ###Programa principal
 					print('Usuário não cadatrado ou dados incorretos\n')
 		elif c=='2':
 			lista_leilao(soc)
-			"""
-			soc.sendall('Lista_leiloes')
-			resp = soc.recv(4096)
-			print resp
-			"""
 		while estado==1:
 			time.sleep(0.1)
 			if flag==0:
@@ -271,14 +266,7 @@ if __name__ == '__main__':  ###Programa principal
 						print "Ocorreu algum erro. Tente novamente\n"
 			elif c == '0':
 				lista_leilao(soc)
-				'''
-				soc.sendall('Lista_leiloes')
-				resp = soc.recv(4096)
-				print resp
-				'''
 			elif c=='2':
-				#sen=raw_input("\nDigite sua senha\n")
-				#soc.sendall('Apaga_usuario,'+sen)
 				soc.sendall('Apaga_usuario,')
 				resp=soc.recv(1024)
 				if resp == 'ok':
@@ -345,8 +333,6 @@ if __name__ == '__main__':  ###Programa principal
 						flag=1
 						num_leiloes = num_leiloes + 1
 						time.sleep(1)  # Para dar tempo de receber a resposta do leilão do servidor
-					#else:
-						#print 'Cliente já participa deste leilão',d
 				else:
 					print '\nCliente já está participando deste leilão\n'
 

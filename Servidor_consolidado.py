@@ -98,7 +98,6 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
     readcount_c = 0
     writecount_c = 0
 
-
     def adc_usuario(self,usuario):  # Método para adicionar novo usuário à lista
 
         self.lista_usuario.append(usuario)           # Inclusão do usuário no atributo lista
@@ -128,7 +127,6 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
             print str(i.nome)+', pertecente a '+i.dono+' para dia: '+str(int(i.dia))\
                   +'/'+str(int(i.mes))+'/'+str(int(i.ano))+' as '+str(int(i.hora))+\
                   ':'+str(int(i.minuto))+'h'
-
 
     def __init__(self): #metodo para carregar usuários do txt
         self.onlines = []
@@ -168,7 +166,6 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
 
                     self.inicios_de_leilao.append([c[0], hora_leilao])
 
-
                 else :
                     #aviso de que algum leilão perdeu a data de inicio com servidor off line
                     print '\nLeilão número '+str(c[0])+' teve momento de início perdido com servidor off-line\n'
@@ -188,21 +185,15 @@ class controle_geral: # Classe que controla os usários do sistema de leilão
                 elif i.senha == senha:  #verifica se senha é correta
                     resp=1
                     break
-
         return resp
-
     def add_socket(self,nome, sock): # Função para alterar socket de usuário logado
 
         for i in self.lista_usuario:
             if i.nome == nome:
                 i.socket1=sock
-
-
 def inicializador_de_leiloes(): # Rotina que monitora o início dos leilões
     global controle
-
     while (1):
-
         agora = time.time() # aquisição da hora atual em segundos
 
         #Percorre a lista controle.inicios_de_leilao de 2 em 2 segundos verificando se algum leilão está a menos
@@ -253,8 +244,6 @@ def inicializador_de_leiloes(): # Rotina que monitora o início dos leilões
                 escutador = threading.Thread(target=escuta_participantes, args=(indice,controle.lista_leiloes_correntes[indice].identificador))
                 escutador.start()
 
-
-
                 controle.inicios_de_leilao.remove(i) #remove leilão da estrutura de verificação de início
 
         time.sleep(2)
@@ -298,7 +287,6 @@ def mata_leilao(indice,identificador): # Thread que verifica se cada leilão tev
                     break
                 cont1 += 1
 
-
             if str(vencedor) != 'Aguardando o envio': # verificação se houve algum lance no leilão
                 cont2=0
 
@@ -310,9 +298,6 @@ def mata_leilao(indice,identificador): # Thread que verifica se cada leilão tev
                         #indice_vencedor=i.indice
                         break
                     cont2+=1
-
-
-
                 #composição da mensagem contato cliente
                 print 'compondo mensagens de contato'
                 mens_p_dono = 'Contato_cliente,'+str(identificador)+','+str(valor)+','+str(vencedor)+','+ str(endereco_venc)\
@@ -322,7 +307,6 @@ def mata_leilao(indice,identificador): # Thread que verifica se cada leilão tev
 
                 controle.lista_usuario[cont2].mensagens_pendentes.append(mens_p_vencedor) # adicionando mensagem à lista de mensagens
                                                                                           # pendentes para envio pelo thread específico
-
 
             else: #Não houve lance no leilão
 
@@ -590,7 +574,6 @@ def mesageiro_de_finais(conn3, name, logado):
         if i.nome == name:
             while 1:
                 if globals()[morte]==0:
-                    #aqui tem que entrar proteção pra controle
                     if len(i.mensagens_pendentes) != 0:  # Existem mensagens a serem enviadas
 
                         conn3.sendall(str(i.mensagens_pendentes.pop(0)))
@@ -717,8 +700,6 @@ def servidor(conn,addr):
             listar_leiloes(conn,controle.lista_leiloes_correntes)
             listar_leiloes(conn,controle.lista_leiloes_futuros)
 
-
-
         while estado == 1: # Switch 2
             print 'switch2\n'
             resp=conn.recv(1024)
@@ -738,7 +719,7 @@ def servidor(conn,addr):
                     num_leiloes = 0
                     for lin in arquivo:
                         num_leiloes=lin
-                        #print 'Número de leilões cadastrados absorvidos '+str(num_leiloes)+'\n'
+
                     arquivo.close()
                     num_leiloes=int(num_leiloes)+1
                     arquivo = open('numero_de_leiloes_cadastrados.txt','w')  # trocando
@@ -781,9 +762,6 @@ def servidor(conn,addr):
                         print ind.nome+' removido'
                 controle.lista_usuario.remove(flag)
                 temp.close()
-
-
-
                 estado=0
                 conn.sendall('ok')
 
@@ -941,10 +919,6 @@ def servidor(conn,addr):
                         release_escritor(controle.lista_leiloes_correntes[indice].identificador)
 
                         conn.sendall('ok')
-
-
-
-
 
 #Uso de semáforo para fazer o controle dos leitores-escritores, com prioridade para os escritores.
 
