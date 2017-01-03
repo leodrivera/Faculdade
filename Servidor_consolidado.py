@@ -272,6 +272,80 @@ def mata_leilao(indice,identificador): # Thread que verifica se cada leilão tev
             controle.lista_leiloes_correntes[indice].flag_de_situacao=2
             release_escritor(identificador)
             acquire_leitor(identificador)
+            dono=controle.lista_leiloes_correntes[indice].dono
+            vencedor=controle.lista_leiloes_correntes[indice].vencedor_corrente
+            nome2=controle.lista_leiloes_correntes[indice].nome
+            valor=controle.lista_leiloes_correntes[indice].lance_corrente
+            release_leitor(identificador)
+
+            if str(vencedor) != 'Aguardando o envio':
+
+                for i in controle.lista_usuario: #colhendo informações do vencedor
+                    if i.nome==vencedor:
+                        endereco_venc=i.endereco
+                        telefone_venc=i.telefone
+                        email_venc=i.email
+                        indice_vencedor=i.indice
+                    if i.nome==dono:
+                        endereco_dono=i.endereco
+                        telefone_dono=i.telefone
+                        email_dono=i.email
+
+                #composição da mensgame contato cliente
+
+                mens_p_dono = 'Contato_cliente', identificador, valor, vencedor, endereco_venc, telefone_venc, email_venc
+                mens_p_vencedor = 'Contato_vendedor', identificador, valor, vencedor, endereco_dono, telefone_dono, email_dono
+
+            else:
+
+                mens_p_dono = 'Leilao_sem_lances,'+str(identificador)
+
+            marcador1 = 0
+            marcador2 = 0
+            for i in controle.onlines: #verificando se vencedor e dono estão onlines
+                if dono==i:
+                    print 'Dono online'
+                    marcador1 = 1
+                elif vencedor==i:
+                    print 'Vencedor online'
+                    marcador2 = 1
+
+            if marcador1 == 0:  # Dono offline
+                for i in controle.lista_usuario:
+                    if i.nome==dono:
+                        print 'salvando mensagem para dono'
+                        i.mensagens_pendentes.append(mens_p_dono)
+                        break
+            else:
+                print 'Envio imediato para o dono'
+
+            if str(vencedor) != 'Aguardando o envio':
+
+                cont2=0
+                for i in controle.lista_leiloes_correntes[indice].participantes:
+                    if i[0]==indice_vencedor:
+                        break
+                    cont2+=1
+
+                if marcador2 == 0:  # "vencedor offline"
+                    for i in controle.lista_usuario:
+                        if i.nome==vencedor:
+                            print 'salvando mensagem para vencedor'
+                            i.mensagens_pendentes.append(mens_p_vencedor)
+                            break
+                elif controle.lista_leiloes_correntes[indice].participantes[cont2][1]==2: # vencedor saiu do sistema antes do fim do leilão
+                                                                                          #
+
+                    print '\n Vencedor saiu do sistema antes do fim do leilão, voltou mas não entrou no leilão novamente'
+
+
+
+                else: # Vencedor online e ainda com mensageiros do leilão
+
+                    print '\nVencedor online no fim do leilão, mensagem será enviada pelo mensageiro assíncrono'
+
+            else:
+                print '\nNão há vncedor no leilão para recener a mensage de contato do dono\n'
 
             break
         else:
@@ -561,10 +635,24 @@ def servidor(conn,addr):
                     name = a[1] # armazenamento do nome do cliente logado para utilização na criação de leilão
                     print "criei objeto da classe usuário"
                     logado=controle.adc_usuario(nome) #adiciona usuário ao .txt e retorna o índice do usuário
-                    controle.onlines.append(logado) #Adiciona o usuário à lista dos usuários logados
+                    controle.onlines.append(name) #Adiciona o usuário à lista dos usuários logados
                     print "Arquivei usuario"
                     conn.sendall('ok')
-                    estado = 1 # # alteração do servidor para switch 2 ao fim do while(1) (logado)
+                    time.sleep(0.3)
+                    conn.sendall(str(logado))
+                    estado = 1  # alteração do servidor para switch 2 ao fim do while(1) (logado)
+
+                    # socket para recebimento de mensagens d fim de leilão
+                    HOST3 = ''  # Link simbólico representando todas as interfaces disponíveis
+                    PORT3 = 60000 + logado  # Porta
+                    s3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket (TCP)
+                    s3.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
+                                  1)  # forçar que o socket desaloque a porta quando fechar o código
+                    s3.bind((HOST3, PORT3))  # liga o socket com IP e porta
+
+                    conn3, addr3 = s3.accept()  # Aceita uma conexão
+
+
                     break
 
         elif a[0] == 'Faz_login':
@@ -572,17 +660,40 @@ def servidor(conn,addr):
             #Se o nome que ele digitou for igual ao nome e a senha
             # forem iguais as que tenho no regsitro, ele faz o login
                 try:
-                    k1=controle.checar_nome_existente(a[1],1,a[2]) # Verificação se nome existe
+                    k1=controle.checar_nome_existente(a[1], 1, a[2]) # Verificação se nome existe
                     if (k1 == 1):
 
-                        logado = controle.retorna_usuario(a[1],addr)
+                        logado = controle.retorna_usuario(a[1], addr)
                         print 'Usuário '+str(logado.nome)+' de índice '+str(logado.indice.strip())+' logado com ip e porta '+str(logado.socket1)+'\n'
                         name = logado.nome # armazenamento do nome do cliente logado para utilização na criação de leilão
                         logado=logado.indice
-                        controle.onlines.append(logado) # guardamos o identificador do cliente
+                        controle.onlines.append(name) # guardamos o identificador do cliente
 
                         conn.sendall('ok')
+                        time.sleep(0.3)
+                        conn.sendall(str(logado))
                         estado = 1 # alteração do servidor para switch 2 ao fim do while(1) (logado)
+
+
+                        #socket para recebimento de mensagens d fim de leilão
+                        HOST3 = ''  # Link simbólico representando todas as interfaces disponíveis
+                        PORT3 = 60000 + logado # Porta
+                        s3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket (TCP)
+                        s3.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
+                                     1)  # forçar que o socket desaloque a porta quando fechar o código
+                        s3.bind((HOST3, PORT3))  # liga o socket com IP e porta
+
+                        conn3, addr3 = s3.accept()  # Aceita uma conexão
+
+                        for i in controle.lista_usuario: # Verificação de mensagen pendentes no login
+                            if i.nome == name:
+                                if len(i.mensagens_pendentes) != 0: #Existem mensagens a serem enviadas
+                                    time.sleep(0.5)
+                                    for ii in range(len(i.mensagens_pendentes)):
+                                        conn3.sendall(str(i.mensagens_pendentes.pop(0)))
+
+
+
                     else:
                         conn.sendall('not_ok')
                 except KeyError:
@@ -618,6 +729,7 @@ def servidor(conn,addr):
             print 'switch2\n'
             resp=conn.recv(1024)
             b=resp.split(',')
+
             if b[0]=='Lanca_produto': # lançamento de novo produto
                 print 'Trecho de lançamento de produto\n'
                 #atrib = [0] * (len(b))  #  lista vazia para armazenamento de
@@ -758,6 +870,7 @@ def servidor(conn,addr):
                             release_escritor(i.identificador)
                             break
                 print 'Cliente '+str(logado)+' resolveu sair'
+                controle.onlines.remove(name)
                 conn.sendall('ok')
 
             elif b[0]=='Sair_leilao':
@@ -815,6 +928,7 @@ def servidor(conn,addr):
                         release_escritor(controle.lista_leiloes_correntes[indice].identificador)
 
                         conn.sendall('ok')
+
 
 
 
