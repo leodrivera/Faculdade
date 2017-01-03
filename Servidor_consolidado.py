@@ -440,15 +440,11 @@ def mensagem(canal_envio, indice, identificador, nome):
 def inicio_para_lances(indice, identificador):
     global controle  # Se não houver, finaliza-se o leilão. Caso haja, calcula-se o tempo até a próxima verificação
 
-
     agora = time.time()  # aquisição da hora atual em segundos
-
     acquire_leitor(identificador)
     soneca = float(controle.lista_leiloes_correntes[indice].hora_leilao) - float(agora)
     release_leitor(identificador)
-
     time.sleep(soneca)
-
     acquire_escritor(identificador)
     controle.lista_leiloes_correntes[indice].flag_de_situacao=1
     release_escritor(identificador)
@@ -456,20 +452,10 @@ def inicio_para_lances(indice, identificador):
 
 
 def teste_de_data(dia,mes,ano,hora,minuto,segundo,flag): # função pra testar se a hora e data do leilão é no futuro
-
     hora_leilao = str(dia) + '/' + str(mes) + '/' + str(ano) + ' ' + str(hora) + ':' + str(minuto) \
                   + ':' + str(segundo)  # para verificação se data é no futuro
     hora_leilao = datetime.datetime.strptime(hora_leilao, "%d/%m/%Y %H:%M:%S")
     hora_leilao = time.mktime(hora_leilao.timetuple())
-
-    #Mudança para estrutura mais simples
-    """
-    temp = datetime.datetime.now()
-    agora = str(temp.day) + '/' + str(temp.month) + '/' + str(temp.year) + ' ' + str(temp.hour) + ':' + str(
-        temp.minute) + ':' + str(temp.second)
-    agora = datetime.datetime.strptime(agora, "%d/%m/%Y %H:%M:%S")
-    agora = time.mktime(agora.timetuple())
-    """
     agora = time.time()
 
     if flag != 0:
@@ -480,7 +466,16 @@ def teste_de_data(dia,mes,ano,hora,minuto,segundo,flag): # função pra testar s
     else:
         return 0
 
-
+def listar_leiloes(conn,lista):
+    conn.sendall(str(len(lista)))
+    time.sleep(0.3)
+    for i in lista:
+        lista1 = ('{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}'.format('Listagem', str(i.nome), str(i.identificador),
+        str(i.descricao), str(i.lance_minimo),str(i.dia), str(i.mes), str(i.ano), str(i.hora),str(i.minuto), str(i.segundo),
+        str(i.t_max), str(i.dono)))
+        conn.sendall(lista1)
+        time.sleep(0.1)
+"""
 def listar_leiloes(valor):
     if valor == 1:
         lista1 = '\nLeilões em que você está apto a participar:\n'
@@ -505,7 +500,7 @@ def listar_leiloes(valor):
             '\nO leilao pertence a: ' + str(i.dono) + '\n')
     lista = lista1+lista2
     return lista
-
+"""
 def cria_arquivos_leilao():
     try:
         f = open('leiloes_futuros.txt')  # Abre o arquivo leiloes_futuros.txt. Se não tiver, ele acusa erro e cria um
@@ -596,8 +591,12 @@ def servidor(conn,addr):
                     # Perguntar se mando essa mensagem para o cliente ou se é só para mandar o not_ok
                 break  # sai do 'Faz_login' loop mas continua no loop princpal
         elif a[0] == 'Lista_leiloes':
+            # conn.sendall(listar_leiloes(0))
             print 'Listando leilões para anônimo\n'
-            conn.sendall(listar_leiloes(0))
+            listar_leiloes(conn,controle.lista_leiloes_correntes)
+            listar_leiloes(conn,controle.lista_leiloes_futuros)
+
+
 
         """
         elif a[0] == 'Desligar':
@@ -658,7 +657,9 @@ def servidor(conn,addr):
 
             elif b[0] == 'Lista_leiloes':
                 print 'Listando leilões para usuário\n'
-                conn.sendall(listar_leiloes(1))
+                #conn.sendall(listar_leiloes(1))
+                listar_leiloes(conn, controle.lista_leiloes_correntes)
+                listar_leiloes(conn, controle.lista_leiloes_futuros)
 
             elif b[0] == 'Apaga_usuario':
                 print 'Cliente resolveu apagar usuario'
@@ -766,7 +767,7 @@ def servidor(conn,addr):
                     if int(i.identificador)==int(float(b[1])):
                         acquire_escritor(i.identificador)
                         i.participantes[int(float(b[2]))][1]=1
-                        print 'Usuário '+str(logado)+' saiu do leilão '+ str(i.identificador)
+                        print 'Usuário '+str(logado.strip())+' saiu do leilão '+ str(i.identificador)
                         release_escritor(i.identificador)
                         conn.sendall('ok')
                         break
