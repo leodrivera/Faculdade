@@ -93,7 +93,7 @@ def verif_mensagens(soc): #verificação de mensagens pendentes no login
 			print '\nContatos do vendedor\n\nNome:', resp2[3], '\nEndereço:', resp2[4]\
 				, '\nTelefone:', resp2[5], '\nE-mail:', resp2[6]
 		elif resp2[0]== 'Contato_cliente': # Leilão pertencente a cliente terminiou enquanto estava offline
-			print '\nSeu leilão',resp2[1],'terminou.\nO valor de venda foi:',resp2[2],'\nO comprador foi:',resp2[3]\
+			print '\nSeu leilão',resp2[1],'terminou.\nO valor de venda foi R$:',resp2[2],'\nO comprador foi:',resp2[3]\
 			,'\nEndereço:',resp2[4],'\nTelefone:',resp2[5],'\nE-mail:',resp2[6],'\n'
 		elif resp2[0]=='morraa':
 			print '\nMorte do esperador de fim de leilão\n'
@@ -376,6 +376,8 @@ if __name__ == '__main__':  ###Programa principal
 								print '\nValor menor ou igual ao lance corrente\n'
 							elif resp == 'not_ok,3':
 								print '\nLeilão ainda não iniciado\n'
+							elif resp == 'not_ok,4':
+								print '\nLeilão em fase de finalzação'
 							flag2=1
 							break
 					if flag2==0:
