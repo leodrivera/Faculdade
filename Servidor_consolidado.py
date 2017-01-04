@@ -748,34 +748,35 @@ def servidor(conn,addr):
                 listar_leiloes(conn, controle.lista_leiloes_correntes)
                 listar_leiloes(conn, controle.lista_leiloes_futuros)
 
-            elif b[0] == 'Apaga_usuario':
+            elif b[0] == 'Apaga_usuario': #Tratamento da mensagem apaga usuário
                 print 'Cliente resolveu apagar usuario'
                 arq = open('clientes.txt','w')  # apagando txt de usuários
                 arq.close()  #
-                temp=open('clientes.txt','a')
+                temp=open('clientes.txt','a') #Reescrevendo o txt de usuários sem o usuário retirado
                 for ind in controle.lista_usuario:
                     if ind.indice!=logado:
                         print ind.nome+' rearquivado'
-                        temp.write(ind.nome + ',' + ind.telefone + ',' + ind.endereco + ',' + ind.email + ',' + ind.senha+','+ind.socket1+','+str(ind.indice))
+                        temp.write(ind.nome + ',' + ind.telefone + ',' + ind.endereco + ','
+                                   + ind.email + ',' + ind.senha+','+ind.socket1+','+str(ind.indice))
                     else:
                         flag= ind
                         print ind.nome+' removido'
-                controle.lista_usuario.remove(flag)
+                controle.lista_usuario.remove(flag) # Remoção do usuário da lista de usuários
                 temp.close()
                 estado=0
                 conn.sendall('ok')
-
             elif b[0]=='Entrar_leilao':
 
-                flag3=0
+                flag3=0 # Inicia variável pra descobrir se leilão foi encontrado
                 for i in controle.lista_leiloes_correntes: #corre todos os leilões em andamento
                     acquire_leitor(i.identificador)
 
                     if b[1] == str(i.identificador): # executado quando o leilão pedido está em andamento
-                        if i.flag_de_situacao == 2:
+                        if i.flag_de_situacao == 2: # Caso de leilão já terminado
                             release_leitor(i.identificador)
                             print 'leilão já acabou'
                             conn.sendall('not_ok')
+                            flag3 = 1
                             break
                         else:
                             flag3 = 1
@@ -797,7 +798,7 @@ def servidor(conn,addr):
                                     cont2+=1
                                 release_leitor(i.identificador)
                                 print flag4
-                                if flag4==0:
+                                if flag4==0: #quando cliente nunca estev neste leilão
                                     print 'tentativa de primeira entrada no leilão'
                                     conn.sendall('ok')
                                     time.sleep(1)
@@ -807,7 +808,7 @@ def servidor(conn,addr):
                                     print i.participantes
                                     release_escritor(i.identificador)
                                     break
-                                elif flag4==1:
+                                elif flag4==1:  # quando cliente já esteve no leilão e saiu
                                     print 'tentativa de reconexão'
 
                                     conn.sendall('ok') # relogin efetuado com sucesso
@@ -817,12 +818,12 @@ def servidor(conn,addr):
                                     release_escritor(i.identificador)
 
                                     break
-                                elif flag4==2:
+                                elif flag4==2: #quando cliente nunca saiu do leilão
                                     print 'negado pois já está no leilão'
                                     conn.sendall('not_ok') # mensagem de que cliente não deve
                                                            #  ser incluido mais de uma vez no mesmo leilão
                                     break
-                                else:
+                                else: # Quando cliente saiu do sistem após já ter participado do leilão
                                     print 'cliente retornando após ter deslogado'
                                     conn.sendall('ok')
                                     time.sleep(0.4)
@@ -832,7 +833,7 @@ def servidor(conn,addr):
                                     print i.participantes
                                     release_escritor(i.identificador)
                                     break
-                            else:
+                            else: #impedimento do dono do leilão comprar o próprio produto
                                 print '\nDono do leilão não deve concorrer como comprador'
                                 release_leitor(i.identificador)
                                 conn.sendall('not_ok')
@@ -842,7 +843,6 @@ def servidor(conn,addr):
                 if flag3==0:
                     print 'leilão não existente'
                     conn.sendall('not_ok')
-
 
             elif b[0] == 'Sair':
                 estado=0
@@ -860,7 +860,8 @@ def servidor(conn,addr):
                 globals()[morte] = 1 # variável compartilhada para matar thread de fim de leilão
                 conn.sendall('ok')
 
-            elif b[0]=='Sair_leilao':
+            elif b[0]=='Sair_leilao': # Tratamento da mensagem sair leilão
+
                 for i in controle.lista_leiloes_correntes:
                     print b[1]
                     print i.identificador
@@ -871,7 +872,6 @@ def servidor(conn,addr):
                         release_escritor(i.identificador)
                         conn.sendall('ok')
                         break
-
 
             elif b[0] == 'Enviar lance':
                 b[2]=float(b[2])

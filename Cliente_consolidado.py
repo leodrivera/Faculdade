@@ -83,7 +83,7 @@ def ouvinte_de_lances(canal, posicao_no_leilao):
 		elif resp[0] == 'Morraaaa':
 			break
 
-def verif_mensagens(soc): #verificação de mensagens pendentes no login
+def verif_mensagens(soc): #verificação de mensagens pendentes no login e contato de dono e vencedor de leilões
 	while 1:
 
 		resp2=soc.recv(1024)
@@ -96,7 +96,7 @@ def verif_mensagens(soc): #verificação de mensagens pendentes no login
 			print '\nSeu leilão',resp2[1],'terminou.\nO valor de venda foi R$:',resp2[2],'\nO comprador foi:',resp2[3]\
 			,'\nEndereço:',resp2[4],'\nTelefone:',resp2[5],'\nE-mail:',resp2[6],'\n'
 		elif resp2[0]=='morraa':
-			print '\nMorte do esperador de fim de leilão\n'
+
 			break
 
 		else:
@@ -153,7 +153,7 @@ if __name__ == '__main__':  ###Programa principal
 				if re == 'ok':
 					print('Usuário cadastrado com sucesso.\n')
 					estado=1 # Alteração para switch2 (logado)
-					HOST3 = '127.0.0.1'  # The remote host
+
 					PORT3 = 60000 + int(str(soc.recv(1024)))  # The same port as used by the server
 					soc3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket
 					soc3.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
@@ -161,7 +161,7 @@ if __name__ == '__main__':  ###Programa principal
 					flag = 0
 					while 1:  # loop para o cliente não travar caso o servidor não tenha sido aberto
 						try:
-							soc3.connect((HOST3, PORT3))  # Abre uma conexão com IP e porta especificados
+							soc3.connect((HOST, PORT3))  # Abre uma conexão com IP e porta especificados
 							break
 						except:
 							time.sleep(1)
@@ -186,14 +186,14 @@ if __name__ == '__main__':  ###Programa principal
 					num_leiloes=0
 
 					# socket para recebimento de mensagens d fim de leilão
-					HOST3 = '127.0.0.1'  # The remote host
+
 					PORT3 = 60000 + int(str(soc.recv(1024))) # The same port as used by the server
 					soc3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4,tipo de socket
 					soc3.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)  # forçar que o socket desaloque a porta quando fechar o código
 					flag = 0
 					while 1:  # loop para o cliente não travar caso o servidor não tenha sido aberto
 						try:
-							soc3.connect((HOST3, PORT3))  # Abre uma conexão com IP e porta especificados
+							soc3.connect((HOST, PORT3))  # Abre uma conexão com IP e porta especificados
 							break
 						except:
 							time.sleep(1)
@@ -267,13 +267,13 @@ if __name__ == '__main__':  ###Programa principal
 			elif c == '0':
 				lista_leilao(soc)
 			elif c=='2':
-				soc.sendall('Apaga_usuario,')
+				soc.sendall('Apaga_usuario') #envio de mensagem "apaga usuário
 				resp=soc.recv(1024)
 				if resp == 'ok':
 					print '\nUsuário apagado com sucesso\n'
 					estado = 0
 				else:
-					print '\nErro ao apagar usuário, tente nivamente mais tarde\n'
+					print '\nErro ao apagar usuário, tente novamente mais tarde\n'
 			elif c=='3':
 				soc.sendall('Sair')
 				resp = soc.recv(1024)
@@ -315,7 +315,7 @@ if __name__ == '__main__':  ###Programa principal
 						temp2 = int(float(soc.recv(1024)))  # variável que guarda posiçaõ do cliente na lista de participantes do leilão específico
 						globals()[soc_temp].sendall(str(temp2)+','+nome)
 						escuta = threading.Thread(target=ouvinte_de_lances, args=(globals()[soc_temp], temp2))
-						escuta.start()
+						escuta.start() #trhead responsável por receber mensagens de fim leilão, contato cliente e contato dono enquanto online
 						flag = 1
 						num_leiloes = num_leiloes + 1
 						time.sleep(1)  # Para dar tempo de receber a resposta do leilão do servidor
@@ -365,7 +365,7 @@ if __name__ == '__main__':  ###Programa principal
 					if flag2==0:
 						print '\nOpção inválida, cliente não está participando de nenhum leilão com este índice\n'
 
-			elif c=='6':
+			elif c=='6': # Cliente escolheu Sari de leilão
 				if flag == 0:
 					print '\nOpção inválida, cliente não está participando de nenhum leilão\n'
 
@@ -375,7 +375,7 @@ if __name__ == '__main__':  ###Programa principal
 					flag2 = 0
 					for i in lista_leiloes_logados:
 						if i[0]==indice_mensagem and i[2]==0:
-							soc.sendall('Sair_leilao,' + str(indice_mensagem)+','+str(i[1]))
+							soc.sendall('Sair_leilao,' + str(indice_mensagem)+','+str(i[1])) # Envio de mensagem "Sair Leilão"
 							resp = soc.recv(1024)
 							if resp == 'ok':
 								print '\nUsuário retirado de leilão com sucesso\n'
@@ -385,7 +385,7 @@ if __name__ == '__main__':  ###Programa principal
 								i[2]=1 #muda o estado de participação no leilão específico para offline
 								break
 							elif resp == 'not_ok,1':
-								print 'trouble'
+								print 'problema'
 							flag2 = 1
 							break
 						if flag2 == 0:
