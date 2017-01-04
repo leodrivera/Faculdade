@@ -57,7 +57,7 @@ def lista_leilao(soc):
 def ouvinte_de_lances(canal, posicao_no_leilao):
 	global lista_leiloes_logados
 	global nome
-	temp = 0
+
 	resp = canal.recv(1024)
 	m=resp.split(',')
 	lista_leiloes_logados.append([int(float(m[1])), posicao_no_leilao, 0]) #salva na lista de leilões que o cliente participa
@@ -68,15 +68,15 @@ def ouvinte_de_lances(canal, posicao_no_leilao):
 		resp = canal.recv(1024)
 		resp=resp.split(',')
 		if resp[0] == 'Lance':
-			if resp != temp: # Se a mensagem for igual, ele ignora
-				temp = resp
 
-				mensagem = 'Leilão número ' + resp[1] + '\n'+ 'Vencedor até o momento: '\
-						   + resp[2] + '\n' + 'Lance vencedor até o momento: R$' +\
-						   resp[3] + '\n' + 'Número de usuários participantes: ' + resp[4] + '\n' \
-						   + 'Número de lances já efetuados: ' + resp[5] + '\n'
-				print mensagem
-				time.sleep(0.1)
+			mensagem = 'Leilão número ' + resp[1] + '\n'+ 'Vencedor até o momento: '\
+					   + resp[2] + '\n' + 'Lance vencedor até o momento: R$' +\
+					   resp[3] + '\n' + 'Número de usuários participantes: ' + resp[4] + '\n' \
+					   + 'Número de lances já efetuados: ' + resp[5] + '\n'
+			print mensagem
+			time.sleep(0.1)
+
+
 		elif resp[0]== 'Fim_leilao':
 			print 'Leilão número',resp[1],'foi finalizado.\nVencedor:',resp[3],'\nValor de venda: R$',resp[2],'\n\n'
 
