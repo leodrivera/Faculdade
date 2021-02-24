@@ -1,2 +1,8 @@
-# Trabalho
-Trabalho de SisComp
+# Trabalho de Sistemas de Computação para Telecomunicações
+
+
+Fazer o servidor e o cliente para um sistema de leilão. Nesse sistema, novos produtos podem ser cadastrados e listados. Usuários podem ser cadastrados e podem logar e deslogar no sistema. Usuários podem participar de leilões, entrando desde meia hora antes do início do leilão até qualquer momento antes do leilão terminar. O número de lances por leilão e por usuário é totalmente livre, assim como o tempo de duração do leilão. O leilão termina apenas após transcorrido o tempo máximo sem lances daquele produto. Nenhum lance abaixo do lance mínimo deve ser aceito. O usuário pode participar de mais de um leilão ao mesmo tempo.
+Uma vez que um lance seja feito, ele deve ser enviado ao servidor, que deve imediatamente repassar o lance e o seu autor para todos os participantes cadastrados para aquele leilão, desde que o lance seja maior que a oferta atual. Durante os períodos sem lances, o servidor deve mandar o valor atual e o autor do lance de 1 em 1 segundo para todos os participantes. Caso ainda não tenham sido feitos lances, o nome do autor deve ser preenchido com a string “Aguardando o envio” e o lance com o valor mínimo. Ao final do leilão, todos os usuários participantes do leilão devem ser notificados de quem ganhou e o valor final do produto. Além disso, os dados de quem comprou devem ser enviados para quem vendeu e os dados de quem vendeu devem ser passados para quem comprou.
+Novos usuários podem entrar a qualquer momento no leilão e a saída de um ou mais usuários não deve finalizar o leilão.
+O sistema deve listar o histórico de todos os leilões realizados, listando o produto com descrição, preço de venda e data da venda.
+
